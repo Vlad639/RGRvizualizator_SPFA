@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="">
+<head>
+    <link rel="stylesheet" type="text/css" th:href = "@{/css/style.css}">
+    <script type="text/javascript" th:src="@{/jQuery.js}"></script>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+
+    <div id = "instrumnet_and_paint_wrapper">
+        <div id = "paint_area" th:fragment = "paint_fragment">
+            <canvas width='500' height='500'  id="canvas">Обновите браузер</canvas>
+        </div>
+
+        <div id = "instrument_panel">
+            <button onclick="operationType = 1">Вершины</button>
+            <button onclick="operationType = 2">Соединить</button>
+        </div>
+    </div>
+
+    <div id = "test" th:fragment = "test">
+        <script th:inline="javascript">var vertexList = [[${vertexList}]]; </script>
+    </div>
+
+
+
+</body>
+
+<script>
+
+    var canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = 'aliceblue';
+    ctx.fillRect(0 ,0 , 500, 500);
+
+    selectColor = 'green';
+
+    operationType = 1; // 1 - создать, 2 - выбрать
+
+    selectedVertexNumber = 0;
+
+
+
+    function drawCircle(x, y, radius, selected){
+        if (selected){
+            ctx.fillStyle = 'green';
+        }
+        else
+            ctx.fillStyle = 'blueviolet';
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+        ctx.stroke();
+        ctx.fill();
+    }
+
+    function drawVertexFromList(){
+        ctx.clearRect(0, 0, canvas.width, canvas.height); //очистка canvas
+
+        confirmValue = "n";
+        if (selectedVertexNumber === 2){
+            confirmValue = confirm("??");
+            if (confirmValue){
+                alert("Ok");
+            }
+            selectedVertexNumber = 0;
+        }
+
+        if (confirmValue !== "n"){
+            vertexList.forEach(function(elem) {
+                elem.selected = false;
+            });
+
+            $.ajax({
+                type: 'get',
+                url: '/update-vertex',
+                data: {vertexList: vertexList},
+                success: function (data) {
+                    startIndex = data.indexOf("[");
+                    finishIndex = data.indexOf("]") + 1;
+                    res = data.slice(startIndex, finishIndex);
+                    vertexList = JSON.parse(res);
+
+                    drawVertexFromList();
+                },
+            })
+
+        }
+        
+        vertexList.forEach(function(elem) {
+            drawCircle(elem.x, elem.y, elem.radius, elem.selected);
+        });
+    }
+
+
+    //-----------------------------
+    function refreshVertex(){
+        $.ajax({
+            type: 'get',
+            url: '/new-vertex',
+            data: {x: x, y: y},
+            success: function (data) {
+                startIndex = data.indexOf("[");
+                finishIndex = data.indexOf("]") + 1;
+                res = data.slice(startIndex, finishIndex);
+                vertexList = JSON.parse(res);
+
+                drawVertexFromList();
+            },
+        })
+    }
+
+    function clickOnPaintArea(event){
+        x = event.offsetX;
+        y = event.offsetY;
+
+        if (operationType === 1) {
+            refreshVertex();
+        }
+
+        if (operationType === 2){
+                var selectedVertex = [];
+
+                vertexList.forEach(function (elem) {
+                    if (((elem.x - x) * (elem.x - x) + (elem.y - y) * (elem.y - y)) <= elem.radius * elem.radius) {
+                        selectedVertex.push(Number(elem.id));
+                        if (elem.selected){
+                            selectedVertexNumber--;
+                        } else selectedVertexNumber++;
+                    }
+                });
+
+                $.ajax({
+                    type: 'get',
+                    url: '/update-vertex',
+                    data: {vertexList: selectedVertex},
+                    success: function (data) {
+                        startIndex = data.indexOf("[");
+                        finishIndex = data.indexOf("]") + 1;
+                        res = data.slice(startIndex, finishIndex);
+                        vertexList = JSON.parse(res);
+
+                        drawVertexFromList();
+                    },
+                })
+
+            }
+
+    }
+    document.querySelector("#canvas").addEventListener("click", clickOnPaintArea);
+
+
+</script>
+
+</html>
