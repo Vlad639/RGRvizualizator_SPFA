@@ -20,11 +20,13 @@
         </div>
     </div>
 
-    <div id = "test" th:fragment = "test">
+    <div id = "vertexListDiv" th:fragment = "vertexListFragment">
         <script th:inline="javascript">var vertexList = [[${vertexList}]]; </script>
     </div>
 
-
+    <div id = "lineListDiv" th:fragment = "lineListFragment">
+        <script th:inline="javascript">var lineList = [[${lineList}]]; </script>
+    </div>
 
 </body>
 
@@ -33,121 +35,149 @@
     var canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = 'aliceblue';
-    ctx.fillRect(0 ,0 , 500, 500);
-
+    backgroudColor = 'aliceblue';
     selectColor = 'green';
 
-    operationType = 1; // 1 - создать, 2 - выбрать
+    ctx.fillStyle = backgroudColor;
+    ctx.fillRect(0 ,0 , 500, 500);
 
+
+    operationType = 1; // 1 - создать, 2 - выбрать
     selectedVertexNumber = 0;
 
 
+    function drawLine(line){
+        ctx.fillStyle = 'black';
 
-    function drawCircle(x, y, radius, selected){
-        if (selected){
+        ctx.beginPath();
+        ctx.moveTo(line.vertex1.x, line.vertex1.y);
+        ctx.lineTo(line.vertex2.x, line.vertex2.y);
+        ctx.stroke();
+    }
+
+    function drawVertex(vertex){
+        if (vertex.selected){
             ctx.fillStyle = 'green';
         }
         else
             ctx.fillStyle = 'blueviolet';
 
         ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+        ctx.arc(vertex.x, vertex.y, vertex.radius, 0, 2 * Math.PI, false);
         ctx.stroke();
         ctx.fill();
+
+        ctx.font = "14px serif";
+        ctx.fillStyle = 'white';
+        ctx.fillText(vertex.id, vertex.x, vertex.y);
+
     }
 
-    function drawVertexFromList(){
+    function draw(){
+
         ctx.clearRect(0, 0, canvas.width, canvas.height); //очистка canvas
 
-        confirmValue = "n";
-        if (selectedVertexNumber === 2){
-            confirmValue = confirm("??");
-            if (confirmValue){
-                alert("Ok");
-            }
-            selectedVertexNumber = 0;
-        }
-
-        if (confirmValue !== "n"){
-            vertexList.forEach(function(elem) {
-                elem.selected = false;
+        if (lineList != null){
+            lineList.forEach(function(elem) {
+                drawLine(elem);
             });
-
-            $.ajax({
-                type: 'get',
-                url: '/update-vertex',
-                data: {vertexList: vertexList},
-                success: function (data) {
-                    startIndex = data.indexOf("[");
-                    finishIndex = data.indexOf("]") + 1;
-                    res = data.slice(startIndex, finishIndex);
-                    vertexList = JSON.parse(res);
-
-                    drawVertexFromList();
-                },
-            })
-
         }
-        
+
         vertexList.forEach(function(elem) {
-            drawCircle(elem.x, elem.y, elem.radius, elem.selected);
+            drawVertex(elem);
         });
     }
 
-
-    //-----------------------------
-    function refreshVertex(){
-        $.ajax({
-            type: 'get',
-            url: '/new-vertex',
-            data: {x: x, y: y},
-            success: function (data) {
-                startIndex = data.indexOf("[");
-                finishIndex = data.indexOf("]") + 1;
-                res = data.slice(startIndex, finishIndex);
-                vertexList = JSON.parse(res);
-
-                drawVertexFromList();
-            },
-        })
+    function drawWithCallback(callback){
+        draw();
+        callback();
     }
 
+    function getListFromString(str){
+        startIndex = str.indexOf("[");
+        finishIndex = str.indexOf("]") + 1;
+        res = str.slice(startIndex, finishIndex);
+        return JSON.parse(res);
+    }
+
+    selectedVertex1 = null;
+    selectedVertex2 = null;
     function clickOnPaintArea(event){
         x = event.offsetX;
         y = event.offsetY;
 
         if (operationType === 1) {
-            refreshVertex();
+            $.ajax({
+                type: 'get',
+                url: '/new-vertex',
+                data: {x: x, y: y},
+                success: function (data) {
+                    vertexList = getListFromString(data);
+                    draw();
+                },
+            })
         }
 
         if (operationType === 2){
-                var selectedVertex = [];
+
+
 
                 vertexList.forEach(function (elem) {
                     if (((elem.x - x) * (elem.x - x) + (elem.y - y) * (elem.y - y)) <= elem.radius * elem.radius) {
-                        selectedVertex.push(Number(elem.id));
+
+                        if (selectedVertex1 === null){
+                            selectedVertex1 = elem;
+                        }
+                        else{
+                            selectedVertex2 = elem;
+                        }
+
                         if (elem.selected){
                             selectedVertexNumber--;
-                        } else selectedVertexNumber++;
+                        }
+                        else
+                            selectedVertexNumber++;
+
+                        elem.selected = !elem.selected;
+                        draw();
+
+                        if (selectedVertexNumber === 2){
+                            draw();
+
+                            confResult = false;
+                            confResult = confirm("Соединить вершины " + selectedVertex1.id + " и " + selectedVertex2.id + "?");
+
+                            vertexList.forEach(function (elem) {
+                                elem.selected = false;
+                            });
+
+                            if (confResult) {
+                                $.ajax({
+                                    type: 'get',
+                                    url: '/new-line',
+                                    data: {vertex1_id: selectedVertex1.id, vertex2_id: selectedVertex2.id},
+                                    success: function (data) {
+                                        lineList = getListFromString(data);
+                                        draw();
+                                    },
+                                })
+                            }
+
+
+
+                            selectedVertex1 = null;
+                            selectedVertex2 = null;
+
+                            draw();
+                            selectedVertexNumber = 0;
+                        }
+
                     }
                 });
 
-                $.ajax({
-                    type: 'get',
-                    url: '/update-vertex',
-                    data: {vertexList: selectedVertex},
-                    success: function (data) {
-                        startIndex = data.indexOf("[");
-                        finishIndex = data.indexOf("]") + 1;
-                        res = data.slice(startIndex, finishIndex);
-                        vertexList = JSON.parse(res);
-
-                        drawVertexFromList();
-                    },
-                })
 
             }
+
 
     }
     document.querySelector("#canvas").addEventListener("click", clickOnPaintArea);

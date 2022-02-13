@@ -1,23 +1,35 @@
 package ru.vogu.rgrvizualuzator;
 
+
 public class Vertex {
     private int x;
     private int y;
     private int radius;
-    private int number;
     private boolean selected;
-    static int maxId = 0;
+    private static int maxId = 0;
     private int id = 0;
 
-
-    public Vertex(int x, int y, int radius, int number) {
+    public Vertex(int x, int y, int radius, boolean selected, int id) {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.number = number;
+        this.selected = selected;
+        this.id = id;
+    }
+
+    public Vertex(int x, int y, int radius) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
         this.id = maxId + 1;
         maxId = this.id;
+    }
 
+    public Vertex(int x, int y, int radius, boolean selected) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.selected = selected;
     }
 
     public int getX() {
@@ -42,14 +54,6 @@ public class Vertex {
 
     public void setRadius(int radius) {
         this.radius = radius;
-    }
-
-    public int getNumber() {
-        return number;
-    }
-
-    public void setNumber(int number) {
-        this.number = number;
     }
 
     public boolean isSelected() {

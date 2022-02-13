@@ -12,17 +12,23 @@ import java.util.List;
 public class MainPageController {
 
     List<Vertex> vertexArrayList = new ArrayList<>();
+    List<LineArcOrEdge> lineArcOrEdges = new ArrayList<>();
 
     @RequestMapping("/")
     String index(){
+
+        lineArcOrEdges = new ArrayList<>();
+        vertexArrayList = new ArrayList<>();
+        Vertex.setMaxId(0);
+
         return "index";
     }
 
     @RequestMapping("/new-vertex")
     ModelAndView newVertex(@RequestParam("x") int x, @RequestParam("y") int y){
-        ModelAndView modelAndView = new ModelAndView("index::test");
+        ModelAndView modelAndView = new ModelAndView("index::vertexListFragment");
 
-        Vertex vertex = new Vertex(x, y, 20, 0);
+        Vertex vertex = new Vertex(x, y, 20);
         vertexArrayList.add(vertex);
 
         modelAndView.addObject("vertexList", vertexArrayList);
@@ -30,22 +36,27 @@ public class MainPageController {
         return modelAndView;
     }
 
-    @RequestMapping("/update-vertex")
-    ModelAndView updateVertex(@RequestParam("vertexList[]") List<Integer> vertexList){
-        ModelAndView modelAndView = new ModelAndView("index::test");
-
-        for (int vertextId: vertexList) {
-            for (Vertex vertex: vertexArrayList) {
-                if (vertex.getId() == vertextId){
-                    vertex.setSelected(!vertex.isSelected());
-                }
-            }
+    Vertex findVertexById(int findId){
+        for (Vertex elem: vertexArrayList) {
+            if (elem.getId() == findId)
+                return elem;
         }
+        return null;
+    }
 
-        modelAndView.addObject("vertexList", vertexArrayList);
+    @RequestMapping("/new-line")
+    ModelAndView newLine(@RequestParam("vertex1_id") int vertex1Id, @RequestParam("vertex2_id") int vertex2d){
+        ModelAndView modelAndView = new ModelAndView("index::lineListFragment");
+
+        lineArcOrEdges.add(
+                new LineArcOrEdge(findVertexById(vertex1Id), findVertexById(vertex2d))
+        );
+
+        modelAndView.addObject("lineList", lineArcOrEdges);
 
         return modelAndView;
     }
+
 
 
 }
