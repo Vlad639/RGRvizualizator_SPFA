@@ -11,12 +11,21 @@
 
     <div id = "instrumnet_and_paint_wrapper">
         <div id = "paint_area" th:fragment = "paint_fragment">
-            <canvas width='500' height='500'  id="canvas">Обновите браузер</canvas>
+            <canvas width='1000' height='800'  id="canvas">Обновите браузер</canvas>
         </div>
 
         <div id = "instrument_panel">
-            <button onclick="operationType = 1">Вершины</button>
-            <button onclick="operationType = 2">Соединить</button>
+            <button onclick="clearAndChangeOperation(1)">Вершины</button>
+            <button onclick="clearAndChangeOperation(2)">Соединить</button>
+            <button onclick="clearAndChangeOperation(3)">Удалить</button>
+
+            <div id = "vizualization_div">
+                <button > Старт </button>
+                <button > <- </button>
+                <button > ||||||||||||| </button>
+                <button > -> </button>
+            </div>
+
         </div>
     </div>
 
@@ -39,20 +48,44 @@
     selectColor = 'green';
 
     ctx.fillStyle = backgroudColor;
-    ctx.fillRect(0 ,0 , 500, 500);
+    ctx.fillRect(0 ,0 , canvas.width, canvas.height);
 
 
-    operationType = 1; // 1 - создать, 2 - выбрать
+    operationType = 1; // 1 - создать, 2 - выбрать, 3 - удалить
     selectedVertexNumber = 0;
-
+    selectedVertex1 = null;
+    selectedVertex2 = null;
+    selectedVertex = null;
 
     function drawLine(line){
         ctx.fillStyle = 'black';
 
-        ctx.beginPath();
-        ctx.moveTo(line.vertex1.x, line.vertex1.y);
-        ctx.lineTo(line.vertex2.x, line.vertex2.y);
+        fromx = line.vertex1.x;
+        fromy = line.vertex1.y;
+        tox = line.vertex2.x;
+        toy = line.vertex2.y;
+
+        var headlen = 50; // Длина головы стрелки
+        var dx = tox - fromx;
+        var dy = toy - fromy;
+        var angle = Math.atan2(dy, dx);
+
+        ctx.fillStyle = 'black';
+        ctx.moveTo(fromx, fromy);
+        ctx.lineTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
         ctx.stroke();
+
+        ctx.font = "24px serif";
+        ctx.fillStyle = 'red';
+
+        lineCenterX = (line.vertex1.x + line.vertex2.x) / 2;
+        lineCenterY = (line.vertex1.y + line.vertex2.y) / 2;
+
+        ctx.fillText(line.weight, lineCenterX, lineCenterY);
+
     }
 
     function drawVertex(vertex){
@@ -77,6 +110,9 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height); //очистка canvas
 
+        ctx.fillStyle = backgroudColor;
+        ctx.fillRect(0 ,0 , canvas.width, canvas.height);
+
         if (lineList != null){
             lineList.forEach(function(elem) {
                 drawLine(elem);
@@ -93,6 +129,23 @@
         callback();
     }
 
+    function vertexesIsConnectedLine(vertex1, vertex2){
+        result = false;
+        if (lineList != null){
+            lineList.forEach(function(line) {
+                if (
+                    (line.vertex1.id === vertex1.id && line.vertex2.id === vertex2.id) ||
+                    (line.vertex1.id === vertex2.id && line.vertex2.id === vertex1.id)
+                ) {
+                    result = true;
+                    return "break-велосипед";
+                }
+
+            });
+        }
+        return result;
+    }
+
     function getListFromString(str){
         startIndex = str.indexOf("[");
         finishIndex = str.indexOf("]") + 1;
@@ -100,8 +153,26 @@
         return JSON.parse(res);
     }
 
-    selectedVertex1 = null;
-    selectedVertex2 = null;
+    function clearAndChangeOperation(operationNumber){
+        selectedVertexNumber = 0;
+        selectedVertex1 = null;
+        selectedVertex2 = null;
+        selectedVertex = null;
+
+        vertexList.forEach(function (elem) {
+            elem.selected = false;
+        });
+
+        draw();
+
+        operationType = operationNumber;
+
+    }
+
+    function product(Px, Py, Ax, Ay, Bx, By){
+        return (Bx - Ax) * (Py - Ay) - (By - Ay) * (Px - Ax);
+    }
+
     function clickOnPaintArea(event){
         x = event.offsetX;
         y = event.offsetY;
@@ -119,8 +190,6 @@
         }
 
         if (operationType === 2){
-
-
 
                 vertexList.forEach(function (elem) {
                     if (((elem.x - x) * (elem.x - x) + (elem.y - y) * (elem.y - y)) <= elem.radius * elem.radius) {
@@ -144,18 +213,36 @@
                         if (selectedVertexNumber === 2){
                             draw();
 
+                            if (vertexesIsConnectedLine(selectedVertex1, selectedVertex2)) {
+
+                                vertexList.forEach(function (elem) {
+                                    elem.selected = false;
+                                });
+
+                                draw();
+                                alert("Эти вершины уже соединены!");
+
+                                clearAndChangeOperation(-1);
+
+                                return;
+                            }
+
                             confResult = false;
                             confResult = confirm("Соединить вершины " + selectedVertex1.id + " и " + selectedVertex2.id + "?");
+
+                            weight = prompt("Вес стрелки? (по умолчанию - 1)", 1);
 
                             vertexList.forEach(function (elem) {
                                 elem.selected = false;
                             });
 
                             if (confResult) {
+                                selectedVertex1.connectedWithOtherVertex = true;
+                                selectedVertex2.connectedWithOtherVertex = true;
                                 $.ajax({
                                     type: 'get',
                                     url: '/new-line',
-                                    data: {vertex1_id: selectedVertex1.id, vertex2_id: selectedVertex2.id},
+                                    data: {vertex1_id: selectedVertex1.id, vertex2_id: selectedVertex2.id, weight: weight},
                                     success: function (data) {
                                         lineList = getListFromString(data);
                                         draw();
@@ -177,6 +264,70 @@
 
 
             }
+
+        if (operationType === 3) {
+            vertexList.forEach(function (elem) { //Для вершин
+                if (((elem.x - x) * (elem.x - x) + (elem.y - y) * (elem.y - y)) <= elem.radius * elem.radius) {
+
+                    selectedVertex = elem;
+
+                    confResult = false;
+                    confResult = confirm("Удалить вершину? " + selectedVertex.id + "?");
+
+                        if (confResult) {
+
+                            $.ajax({
+                                type: 'get',
+                                url: '/delete-vertex',
+                                data: {selectedVertexId: selectedVertex.id},
+                                success: function (data) {
+                                    vertexList = getListFromString(data);
+                                    draw();
+                                },
+                            })
+
+                            $.ajax({
+                                type: 'get',
+                                url: '/update-lines',
+                                data: {selectedVertexId: selectedVertex.id},
+                                success: function (data) {
+                                    lineList = getListFromString(data);
+                                    draw();
+                                },
+                            })
+                        }
+
+                        draw();
+                    }
+
+            });
+
+            lineList.forEach(function (line) { //Для линий
+
+               // if () {
+
+                    //selectedVertex = elem;
+
+                    // confResult = false;
+                    // confResult = confirm("Удалить линию ?");
+                    //
+                    // if (confResult) {
+                    //     $.ajax({
+                    //         type: 'get',
+                    //         url: '/delete-line',
+                    //         data: {selectedVertexId: selectedVertex.id},
+                    //         success: function (data) {
+                    //             lineList = getListFromString(data);
+                    //             draw();
+                    //         },
+                    //     })
+                    // }
+
+                    draw();
+               // }
+
+            });
+        }
 
 
     }

@@ -3,17 +3,12 @@ package ru.vogu.rgrvizualuzator;
 public class LineArcOrEdge {
     private Vertex vertex1;
     private Vertex vertex2;
-    private int directionTo = -1;
+    private int weight;
 
-    public LineArcOrEdge(Vertex vertex1, Vertex vertex2) {
+    public LineArcOrEdge(Vertex vertex1, Vertex vertex2, int weight) {
         this.vertex1 = vertex1;
         this.vertex2 = vertex2;
-    }
-
-    public LineArcOrEdge(Vertex vertex1, Vertex vertex2, int directionTo) {
-        this.vertex1 = vertex1;
-        this.vertex2 = vertex2;
-        this.directionTo = directionTo;
+        this.weight = weight;
     }
 
     public Vertex getVertex1() {
@@ -32,11 +27,11 @@ public class LineArcOrEdge {
         this.vertex2 = vertex2;
     }
 
-    public int getDirectionTo() {
-        return directionTo;
+    public int getWeight() {
+        return weight;
     }
 
-    public void setDirectionTo(int directionTo) {
-        this.directionTo = directionTo;
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
 }

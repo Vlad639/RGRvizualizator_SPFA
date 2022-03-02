@@ -79,4 +79,5 @@ public class Vertex {
     public void setId(int id) {
         this.id = id;
     }
+
 }
