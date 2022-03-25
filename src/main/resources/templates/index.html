@@ -5,7 +5,20 @@
     <script type="text/javascript" th:src="@{/jQuery.js}"></script>
     <meta charset="UTF-8">
     <title>Title</title>
+
+    <style>
+        #build_panel {
+            margin-bottom: 40px;
+        }
+
+        #prev_step_button {
+            margin-right: 20px;
+        }
+
+    </style>
 </head>
+
+
 <body>
 
 
@@ -15,15 +28,25 @@
         </div>
 
         <div id = "instrument_panel">
-            <button onclick="operationType = 1" >Вершины</button>
-            <button onclick="operationType = 2" >Выбрать</button>
-            <button onclick="connectVertexes()" >Соединить</button>
+            <div id = "build_panel">
+                <div> <p>Построение</p> </div>
+                <div> <button onclick="operationType = 1" >Создать вершину</button> </div>
+                <div> <button onclick="operationType = 2" >Выбрать</button> </div>
+                <div> <button onclick="connectVertexes()" >Соединить</button> </div>
+                <div> <button onclick="" >К визуализации</button> </div>
+            </div>
 
             <div id = "vizualization_div">
-                <button > Старт </button>
-                <button > <- </button>
-                <span th:text="${'1/1'}"> </span>
-                <button onclick=""> -> </button>
+                <div> <p>Визуализация</p> </div>
+                <button onclick="test()"> Визуализировать </button>
+
+                <div>
+                    <button onclick="prevStep()" id = "prev_step_button"> <- </button>
+                    <span id = "steps_status"> -/- </span>
+                    <button onclick="nextStep()"> -> </button>
+                </div>
+
+                <div> <button onclick="" >К редактированию</button> </div>
             </div>
 
         </div>
@@ -33,13 +56,16 @@
 <script>
 
     vertexMaxId = 0;
+    lineMaxId = 0;
     vertexRadius = 20;
     vertexArray = [];
     linesArray = [];
+    SPFASteps = [];
     selectedVertexesNumbers = 0;
 
     firstSelectedVertex = null;
     secondSelectedVertex = null;
+    stepNumber = 0;
 
     class Point {
         x = 0;
@@ -55,6 +81,8 @@
         x = 0;
         y = 0;
         selected = false;
+        light = false;
+
         constructor(x, y) {
             this.id = vertexMaxId + 1;
             this.x = x;
@@ -64,11 +92,23 @@
     }
 
     class Line {
+        id = 0;
         coordinate1;
         coordinate2;
-        constructor(point1, point2) {
-            this.coordinate1 = point1;
-            this.coordinate2 = point2;
+        vertex1;
+        vertex2;
+        weight = 1;
+        light = false;
+
+        constructor(vertex1, vertex2) {
+            this.vertex1 = vertex1;
+            this.vertex2 = vertex2;
+
+            this.coordinate1 = new Point(vertex1.x, vertex1.y);
+            this.coordinate2 = new Point(vertex2.x, vertex2.y);
+
+            this.id = lineMaxId;
+            lineMaxId ++;
 
         }
     }
@@ -76,12 +116,17 @@
     var canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
 
-    backgroudColor = 'aliceblue';
-    ctx.fillStyle = backgroudColor;
-    ctx.fillRect(0 ,0 , canvas.width, canvas.height);
-
-
     operationType = 1; // 1 - создать, 2 - выбрать
+
+    function clearCanvas(){
+        backgroudColor = 'aliceblue';
+        ctx.clearRect(0 ,0 , canvas.width, canvas.height);
+        ctx.fillStyle = backgroudColor;
+        ctx.rect(0 ,0 , canvas.width, canvas.height);
+        ctx.fill();
+    }
+
+    clearCanvas();
 
     function drawAllVertexes(){
 
@@ -93,51 +138,238 @@
                 else
                     ctx.fillStyle = 'green';
 
+                if (vertex.light)
+                    ctx.fillStyle = 'red';
+
                 ctx.beginPath();
                 ctx.arc(vertex.x, vertex.y, vertexRadius, 0, 2 * Math.PI, false);
+
+                ctx.strokeStyle = 'black';
                 ctx.stroke();
                 ctx.fill();
 
                 ctx.font = "14px serif";
                 ctx.fillStyle = 'white';
                 ctx.fillText(vertex.id, vertex.x, vertex.y);
+
             })
 
 
     }
 
+    function findVertexFromId(id) {
+        let result = null;
+        if (vertexArray !== null) {
+            vertexArray.forEach(function (vertex) {
+                if (vertex.id === id) {
+                    result = vertex;
+                    return "break";
+                }
+            })
+            return result;
+        }
+    }
 
-    function fuck(line){
-        ctx.fillStyle = 'black';
+    function findLineFromVertexesIds(vertex1Id, vertex2Id) {
+        let result = null;
+        if (linesArray !== null) {
+            linesArray.forEach(function (line) {
+                if (line.vertex1.id === vertex1Id && line.vertex2.id === vertex2Id) {
+                    result = line;
+                    return "break";
+                }
+            })
+            return result;
 
-        fromx = line.vertex1.x;
-        fromy = line.vertex1.y;
-        tox = line.vertex2.x;
-        toy = line.vertex2.y;
+        }
+    }
 
-        var headlen = 50; // Длина головы стрелки
-        var dx = tox - fromx;
-        var dy = toy - fromy;
-        var angle = Math.atan2(dy, dx);
+    function findLineFromId(id){
+        let result = null;
+        if (linesArray !== null) {
+            linesArray.forEach(function (line) {
+                if (line.id === id) {
+                    result = vertex;
+                    return "break";
+                }
+            })
+            return result;
+        }
+    }
 
-        ctx.fillStyle = 'black';
-        ctx.moveTo(fromx, fromy);
-        ctx.lineTo(tox, toy);
-        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
-        ctx.moveTo(tox, toy);
-        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
-        ctx.stroke();
+    function updateStepsStatusView(currentStep, allStep){
+        text = currentStep + "/" + allStep
+        document.getElementById("steps_status").innerText = text;
+    }
 
-        ctx.font = "24px serif";
-        ctx.fillStyle = 'red';
+    function fillSPFAstepsFalseLight(){
+        for (let i = 0; i < SPFASteps.length; i++) {
+            SPFASteps[i].light = false;
+            SPFASteps[i].vertex1.light = false;
+        }
+    }
 
-        lineCenterX = (line.vertex1.x + line.vertex2.x) / 2;
-        lineCenterY = (line.vertex1.y + line.vertex2.y) / 2;
+    function nextStep(){
 
-        ctx.fillText(line.weight, lineCenterX, lineCenterY);
+        if (stepNumber < SPFASteps.length) {
+
+            fillSPFAstepsFalseLight();
+
+            for (let i = 0; i <= stepNumber; i++) {
+                SPFASteps[i].light = true;
+                SPFASteps[i].vertex1.light = true;
+            }
+
+            updateStepsStatusView(stepNumber + 1, SPFASteps.length);
+            stepNumber ++;
+
+        }
+
+        draw();
+        console.log(stepNumber);
+
 
     }
 
+    function prevStep(){
+
+
+
+         if (stepNumber > 0) {
+
+             fillSPFAstepsFalseLight();
+
+             for (let i = 0; i < stepNumber - 1; i++) {
+                 SPFASteps[i].light = true;
+                 SPFASteps[i].vertex1.light = true;
+             }
+
+             updateStepsStatusView(stepNumber - 1, SPFASteps.length);
+             stepNumber --;
+         }
+
+
+
+        draw();
+        console.log(stepNumber);
+
+    }
+
+    function test(){
+
+        // JavaScript implementation of SPFA
+
+        // Graph is stored as vector of vector of pairs
+// first element of pair store vertex
+// second element of pair store weight
+        let graph = new Array(100000);
+
+        // Function to add edges in the graph
+// connecting a pair of vertex(frm) and weight
+// to another vertex(to) in graph
+        function addEdge(from, to, weight) {
+            graph[from].push([to, weight ]);
+
+        }
+
+        function addEdgesFromLines() {
+
+            if (linesArray !== null)
+                linesArray.forEach(function(line) {
+                    addEdge(
+                        line.vertex1.id,
+                        line.vertex2.id,
+                        line.weight
+                    );
+                })
+
+        }
+
+        // Function to print shortest distance from source
+        function print_distance(d,V) {
+            console.log("Vertex", " ", "Distance" + " from source");
+
+            for (let i = 1; i <= V; i++)
+                console.log( i+"     "+ d[i]);
+
+        }
+
+        // Function to compute the SPF algorithm
+        function shortestPathFaster(S,V) {
+            let d = new Array(V + 1); //Массив с кратчайшими расстояниями
+
+            // Boolean array to check if vertex
+            // is present in queue or not
+            let inQueue = new Array(V + 1);
+
+            // Initialize the distance from source to
+            // other vertex as Integer.MAX_VALUE(infinite)
+            for (let i = 0; i <= V; i++)
+                d[i] = Number.MAX_VALUE;
+
+            d[S] = 0;
+
+            let q = [];
+            q.push(S);
+            inQueue[S] = true;
+
+            while (q.length !== 0) {
+
+                // Take the front vertex from Queue
+                let u = q[0];
+                q.shift();
+                inQueue[u] = false;
+
+                // Relaxing all the adjacent edges of
+                // vertex taken from the Queue
+
+                console.log(u + ":");
+
+                for (let i = 0; i < graph[u].length; i++) {
+
+                    let v = graph[u][i][0];
+                    let weight = graph[u][i][1];
+
+                    console.log(u + "--" + weight + "-->" + v);
+                    SPFASteps.push(findLineFromVertexesIds(u, v));
+
+
+                    if (d[v] > d[u] + weight) {
+
+                        d[v] = d[u] + weight;
+
+                        // Check if vertex v is in Queue or not
+                        // if not then push it into the Queue
+                        if (!inQueue[v])
+                        {
+                            q.push(v);
+                            inQueue[v] = true;
+                        }
+                    }
+                }
+            }
+
+            // Print the result
+            print_distance(d, V);
+        }
+
+        // Driver code
+        let V = 4;
+        let S = 1;
+        for (let i = 0; i < graph.length; i++)
+            graph[i] = [];
+
+
+
+        addEdgesFromLines();
+
+
+        // Calling shortestPathFaster function
+        shortestPathFaster(S, V);
+
+// This code is contributed by unknown2108
+
+    }
 
 
     function drawAllLines(){
@@ -147,6 +379,9 @@
 
                 arrowColor = 'black';
                 headLen = 22; // Длина головы стрелки
+
+                if (line.light)
+                    arrowColor = 'red';
 
                 deltaX = Math.abs(line.coordinate2.x - line.coordinate1.x);
                 deltaY = Math.abs(line.coordinate1.y - line.coordinate2.y);
@@ -174,7 +409,8 @@
                 dy = y - vertex1Y;
                 angle = Math.atan2(dy, dx);
 
-                ctx.fillStyle = arrowColor;
+                ctx.beginPath();
+                ctx.strokeStyle = arrowColor;
                 ctx.moveTo(vertex1X, vertex1Y);
                 ctx.lineTo(x, y);
                 ctx.lineTo(x - headLen * Math.cos(angle - Math.PI / 6), y - headLen * Math.sin(angle - Math.PI / 6));
@@ -194,6 +430,7 @@
     }
 
     function draw() {
+        clearCanvas();
         drawAllLines();
         drawAllVertexes();
     }
@@ -210,8 +447,7 @@
             else {
                 alert(firstSelectedVertex.id + " ---> " + secondSelectedVertex.id);
 
-                linesArray.push(new Line(new Point(firstSelectedVertex.x, firstSelectedVertex.y),
-                new Point(secondSelectedVertex.x, secondSelectedVertex.y)));
+                linesArray.push(new Line(firstSelectedVertex, secondSelectedVertex));
 
                 firstSelectedVertex = null;
                 secondSelectedVertex = null;
