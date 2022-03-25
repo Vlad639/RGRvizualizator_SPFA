@@ -11,8 +11,18 @@
             margin-bottom: 40px;
         }
 
-        #prev_step_button {
+        #steps_status {
+            margin-left: 20px;
             margin-right: 20px;
+        }
+
+        #alg_console_div {
+            height: 350px;
+        }
+
+        #alg_console {
+            height: 250px;
+            width: 300px;
         }
 
     </style>
@@ -38,15 +48,26 @@
 
             <div id = "vizualization_div">
                 <div> <p>Визуализация</p> </div>
-                <button onclick="test()"> Визуализировать </button>
+                <button onclick="test()"> Просчитать алгоритм </button>
+
+                <div>
+                    <div> <label>Стартовая вершина:<input type="text" size="2" value="1" id = "start_vertex"> </label> </div>
+                    <label>Финальная вершина:<input type="text" size="2" value="3" id = "finish_vertex"> </label>
+                </div>
 
                 <div>
                     <button onclick="prevStep()" id = "prev_step_button"> <- </button>
                     <span id = "steps_status"> -/- </span>
                     <button onclick="nextStep()"> -> </button>
+
                 </div>
 
                 <div> <button onclick="" >К редактированию</button> </div>
+            </div>
+
+            <div id = "alg_console_div">
+                <textarea id = "alg_console">
+                </textarea>
             </div>
 
         </div>
@@ -97,7 +118,7 @@
         coordinate2;
         vertex1;
         vertex2;
-        weight = 1;
+        weight = Math.round(Math.random() * 20);
         light = false;
 
         constructor(vertex1, vertex2) {
@@ -112,6 +133,7 @@
 
         }
     }
+
 
     var canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
@@ -128,34 +150,15 @@
 
     clearCanvas();
 
-    function drawAllVertexes(){
-
-        if (vertexArray !== null)
-            vertexArray.forEach(function(vertex) {
-
-                if (vertex.selected)
-                    ctx.fillStyle = 'blueviolet';
-                else
-                    ctx.fillStyle = 'green';
-
-                if (vertex.light)
-                    ctx.fillStyle = 'red';
-
-                ctx.beginPath();
-                ctx.arc(vertex.x, vertex.y, vertexRadius, 0, 2 * Math.PI, false);
-
-                ctx.strokeStyle = 'black';
-                ctx.stroke();
-                ctx.fill();
-
-                ctx.font = "14px serif";
-                ctx.fillStyle = 'white';
-                ctx.fillText(vertex.id, vertex.x, vertex.y);
-
-            })
-
-
+    function clearAlgConsole(){
+        document.getElementById("alg_console").value = "";
     }
+
+    function printlnAlgConsole(message){
+        document.getElementById("alg_console").value += message + "\n";
+    }
+
+
 
     function findVertexFromId(id) {
         let result = null;
@@ -220,6 +223,9 @@
                 SPFASteps[i].vertex1.light = true;
             }
 
+            printedLine = SPFASteps[stepNumber];
+            printlnAlgConsole(printedLine.vertex1.id + "----(" + printedLine.weight + ")---->" + printedLine.vertex2.id);
+
             updateStepsStatusView(stepNumber + 1, SPFASteps.length);
             stepNumber ++;
 
@@ -244,6 +250,9 @@
                  SPFASteps[i].vertex1.light = true;
              }
 
+             printedLine = SPFASteps[stepNumber - 1];
+             printlnAlgConsole(printedLine.vertex1.id + "----(" + printedLine.weight + ")---->" + printedLine.vertex2.id);
+
              updateStepsStatusView(stepNumber - 1, SPFASteps.length);
              stepNumber --;
          }
@@ -256,6 +265,11 @@
     }
 
     function test(){
+
+        SPFASteps = [];
+        clearAlgConsole();
+        draw();
+
 
         // JavaScript implementation of SPFA
 
@@ -330,13 +344,19 @@
                     let v = graph[u][i][0];
                     let weight = graph[u][i][1];
 
-                    console.log(u + "--" + weight + "-->" + v);
-                    SPFASteps.push(findLineFromVertexesIds(u, v));
+                    //console.log(u + "--" + weight + "-->" + v);
+
+                    //printlnAlgConsole(u + "--" + weight + "-->" + v);
+
+
+                    foundedLine = findLineFromVertexesIds(u, v);
 
 
                     if (d[v] > d[u] + weight) {
 
                         d[v] = d[u] + weight;
+
+                        //foundedLine.weight =  d[v] = d[u] + weight;
 
                         // Check if vertex v is in Queue or not
                         // if not then push it into the Queue
@@ -346,6 +366,9 @@
                             inQueue[v] = true;
                         }
                     }
+
+                    SPFASteps.push(foundedLine);
+
                 }
             }
 
@@ -353,9 +376,9 @@
             print_distance(d, V);
         }
 
-        // Driver code
-        let V = 4;
-        let S = 1;
+        let S = Number(document.getElementById("start_vertex").value);
+        let V = Number(document.getElementById("finish_vertex").value);
+
         for (let i = 0; i < graph.length; i++)
             graph[i] = [];
 
@@ -366,6 +389,11 @@
 
         // Calling shortestPathFaster function
         shortestPathFaster(S, V);
+
+        stepNumber = 0;
+        updateStepsStatusView(0, SPFASteps.length);
+
+        printlnAlgConsole("Алгоритм для вершин " + S + " и " + V + " построен" );
 
 // This code is contributed by unknown2108
 
@@ -416,9 +444,49 @@
                 ctx.lineTo(x - headLen * Math.cos(angle - Math.PI / 6), y - headLen * Math.sin(angle - Math.PI / 6));
                 ctx.moveTo(x, y);
                 ctx.lineTo(x - headLen * Math.cos(angle + Math.PI / 6), y - headLen * Math.sin(angle + Math.PI / 6));
+
+                //вычисление середины стрелки
+                x = (line.vertex1.x + line.vertex2.x) / 2;
+                y = (line.vertex1.y + line.vertex2.y) / 2;
+
+                ctx.font = "14px serif";
+                ctx.fillStyle = 'black';
+                ctx.fillText(line.weight, x, y);
+
                 ctx.stroke();
 
+
+
             })
+
+    }
+
+    function drawAllVertexes(){
+
+        if (vertexArray !== null)
+            vertexArray.forEach(function(vertex) {
+
+                if (vertex.selected)
+                    ctx.fillStyle = 'blueviolet';
+                else
+                    ctx.fillStyle = 'green';
+
+                if (vertex.light)
+                    ctx.fillStyle = 'red';
+
+                ctx.beginPath();
+                ctx.arc(vertex.x, vertex.y, vertexRadius, 0, 2 * Math.PI, false);
+
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.font = "14px serif";
+                ctx.fillStyle = 'white';
+                ctx.fillText(vertex.id, vertex.x, vertex.y);
+
+            })
+
 
     }
 
