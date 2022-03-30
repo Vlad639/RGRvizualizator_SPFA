@@ -1,12 +1,26 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="">
 <head>
-    <link rel="stylesheet" type="text/css" th:href = "@{/css/style.css}">
-    <script type="text/javascript" th:src="@{/jQuery.js}"></script>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>SPFA визуализатор</title>
 
     <style>
+
+        #paint_area {
+            width: 1000px;
+            height: 800px;
+        }
+
+        #instrument_panel {
+            width: 400px;
+            height: 800px;
+            background-color: gainsboro;
+        }
+
+        #instrumnet_and_paint_wrapper {
+            display: flex;
+        }
+
         #build_panel {
             margin-bottom: 40px;
         }
@@ -24,6 +38,12 @@
             height: 250px;
             width: 300px;
         }
+
+        #start_button {
+            width: 200px;
+        }
+
+
 
     </style>
 </head>
@@ -43,7 +63,7 @@
                 <div> <button onclick="operationType = 1" >Создать вершину</button> </div>
                 <div> <button onclick="operationType = 2" >Выбрать</button> </div>
                 <div> <button onclick="connectVertexes()" >Соединить</button> </div>
-                <div> <button onclick="" >К визуализации</button> </div>
+                <div> <button onclick="operationType = 3" >Удалить вершину</button> </div>
             </div>
 
             <div id = "vizualization_div">
@@ -59,15 +79,22 @@
                     <button onclick="prevStep()" id = "prev_step_button"> <- </button>
                     <span id = "steps_status"> -/- </span>
                     <button onclick="nextStep()"> -> </button>
-
                 </div>
 
-                <div> <button onclick="" >К редактированию</button> </div>
+                <div>
+                    <div> <label>Задержка:<input type="text" size="3" value="500" id = "delay_time"> </label> </div>
+                    <button onclick="beginAuto()" id = "begin_button"> Начать заново </button>
+                    <button onclick="pause()" id = "pause_button"> Пауза </button>
+                </div>
+
             </div>
 
             <div id = "alg_console_div">
-                <textarea id = "alg_console">
-                </textarea>
+                <div>
+                    <textarea id = "alg_console">
+                    </textarea>
+                </div>
+                <button onclick="clearAlgConsole()" id = "clear_console_button" value=""> Очистить </button>
             </div>
 
         </div>
@@ -82,7 +109,13 @@
     vertexArray = [];
     linesArray = [];
     SPFASteps = [];
+    SPFAStepsWeights = [];
+    SPFAStepsStartWeighst = [];
+    timersArray = [];
+
     selectedVertexesNumbers = 0;
+    vizPause = false;
+    timerId = null;
 
     firstSelectedVertex = null;
     secondSelectedVertex = null;
@@ -132,6 +165,7 @@
             lineMaxId ++;
 
         }
+
     }
 
 
@@ -158,20 +192,54 @@
         document.getElementById("alg_console").value += message + "\n";
     }
 
+    function clearTimers(){
+        for (let i = 0; i < SPFASteps.length; i++)
+            clearTimeout(timersArray[i]);
 
+    }
 
-    function findVertexFromId(id) {
-        let result = null;
-        if (vertexArray !== null) {
-            vertexArray.forEach(function (vertex) {
-                if (vertex.id === id) {
-                    result = vertex;
-                    return "break";
-                }
-            })
-            return result;
+    function pause(){
+
+        pauseButton = document.getElementById("pause_button");
+
+        if (vizPause)
+            pauseButton.innerText = "Пауза";
+        else
+            pauseButton.innerText = "Продолжить";
+
+        if (!vizPause)
+            clearTimers();
+        else {
+            for (let i = 0; i < (SPFASteps.length - stepNumber); i++) {
+                timersArray[i] = setTimeout(() => {
+                    nextStep();
+                }, delayTime * (i + 1));
+            }
+
+        }
+
+        vizPause = !vizPause;
+
+    }
+
+    function beginAuto(){
+
+        test();
+
+        pauseButton = document.getElementById("pause_button");
+        pauseButton.innerText = "Пауза";
+
+        vizPause = false;
+
+        delayTime = document.getElementById("delay_time").value;
+
+        for (let i = 0; i < SPFASteps.length; i++) {
+            timersArray[i] = setTimeout(() => {
+                nextStep();
+            }, delayTime * (i + 1));
         }
     }
+
 
     function findLineFromVertexesIds(vertex1Id, vertex2Id) {
         let result = null;
@@ -187,18 +255,6 @@
         }
     }
 
-    function findLineFromId(id){
-        let result = null;
-        if (linesArray !== null) {
-            linesArray.forEach(function (line) {
-                if (line.id === id) {
-                    result = vertex;
-                    return "break";
-                }
-            })
-            return result;
-        }
-    }
 
     function updateStepsStatusView(currentStep, allStep){
         text = currentStep + "/" + allStep
@@ -221,6 +277,13 @@
             for (let i = 0; i <= stepNumber; i++) {
                 SPFASteps[i].light = true;
                 SPFASteps[i].vertex1.light = true;
+
+                if (SPFASteps[i].weight !== SPFAStepsWeights[i]){
+                    printlnAlgConsole("Обновлён вес ребра: " + SPFASteps[i].weight + "->" + SPFAStepsWeights[i]);
+                }
+
+                SPFASteps[i].weight = SPFAStepsWeights[i];
+
             }
 
             printedLine = SPFASteps[stepNumber];
@@ -239,8 +302,6 @@
 
     function prevStep(){
 
-
-
          if (stepNumber > 0) {
 
              fillSPFAstepsFalseLight();
@@ -250,8 +311,10 @@
                  SPFASteps[i].vertex1.light = true;
              }
 
+             SPFASteps[stepNumber - 1].weight = SPFAStepsStartWeighst[stepNumber - 1];
+
              printedLine = SPFASteps[stepNumber - 1];
-             printlnAlgConsole(printedLine.vertex1.id + "----(" + printedLine.weight + ")---->" + printedLine.vertex2.id);
+             printlnAlgConsole(printedLine.vertex2.id + "<----(" + printedLine.weight + ")----" + printedLine.vertex1.id);
 
              updateStepsStatusView(stepNumber - 1, SPFASteps.length);
              stepNumber --;
@@ -266,8 +329,15 @@
 
     function test(){
 
+
+        for (let i = 0; i < SPFASteps.length; i++)
+            prevStep();
+
+
         SPFASteps = [];
-        clearAlgConsole();
+        SPFAStepsWeights = [];
+        SPFAStepsStartWeighst = [];
+
         draw();
 
 
@@ -351,10 +421,11 @@
 
                     foundedLine = findLineFromVertexesIds(u, v);
 
-
                     if (d[v] > d[u] + weight) {
 
                         d[v] = d[u] + weight;
+
+                        SPFAStepsWeights.push(d[u] + weight);
 
                         //foundedLine.weight =  d[v] = d[u] + weight;
 
@@ -365,9 +436,12 @@
                             q.push(v);
                             inQueue[v] = true;
                         }
-                    }
+                    } else
+                        SPFAStepsWeights.push(foundedLine.weight);
 
                     SPFASteps.push(foundedLine);
+                    SPFAStepsStartWeighst.push(foundedLine.weight);
+
 
                 }
             }
@@ -455,8 +529,6 @@
 
                 ctx.stroke();
 
-
-
             })
 
     }
@@ -513,9 +585,15 @@
                 draw();
             }
             else {
-                alert(firstSelectedVertex.id + " ---> " + secondSelectedVertex.id);
+                promptResult = prompt("Соединить вершины" + firstSelectedVertex.id + " и " + secondSelectedVertex.id + "?"
+                +"\nВес ребра:");
 
-                linesArray.push(new Line(firstSelectedVertex, secondSelectedVertex));
+                if (promptResult !== null) {
+                    newLine = new Line(firstSelectedVertex, secondSelectedVertex);
+                    newLine.weight = Number(promptResult);
+
+                    linesArray.push(newLine);
+                }
 
                 firstSelectedVertex = null;
                 secondSelectedVertex = null;
@@ -523,6 +601,20 @@
                 selectedVertexesNumbers = 0;
                 draw();
             }
+
+    }
+
+    function deleteLinesWhenContainVertexWithId(deletedVertexId){
+
+        for (let i = 0; i < linesArray.length; i++) {
+            if (linesArray[i].vertex1.id === deletedVertexId || linesArray[i].vertex2.id === deletedVertexId){
+                linesArray.splice(i, 1);
+                i = 0;
+            }
+        }
+
+        if (linesArray[0].vertex1.id === deletedVertexId || linesArray[0].vertex2.id === deletedVertexId)
+             linesArray = null;
 
     }
 
@@ -556,6 +648,30 @@
                     }
 
                 })
+        }
+
+        if (operationType === 3) {
+
+            deletedVertex = null;
+
+            if (vertexArray !== null)
+                vertexArray.forEach(function(vertex) {
+                    if (((vertex.x - x) * (vertex.x - x) + (vertex.y - y) * (vertex.y - y)) <= vertexRadius * vertexRadius) {
+                        deletedVertex = vertex;
+                        return "break";
+                    }
+                })
+
+            if (deletedVertex !== null){
+                confirmResult = confirm("Удалить вершину " + deletedVertex.id + "?");
+
+                if (confirmResult) {
+                    let i = vertexArray.indexOf(deletedVertex);
+                    vertexArray.splice(i, 1);
+
+                    deleteLinesWhenContainVertexWithId(deletedVertex.id);
+                }
+            }
         }
 
         draw();
