@@ -322,7 +322,7 @@
         }
 
         draw();
-        console.log(stepNumber);
+        //console.log(stepNumber);
 
 
     }
@@ -354,8 +354,42 @@
 
     }
 
-    function test(){
 
+    // function bypass_back(vertexId, stopVertexId, prevWeight){
+    //
+    //     for (let i = 0; i < linesArray.length; i++)
+    //         if (linesArray[i].vertex1.id === vertexId) {
+    //
+    //             SPFASteps.push(linesArray[i]);
+    //
+    //             SPFAStepsStartWeighst.push(linesArray[i].weight);
+    //             SPFAStepsWeights.push(linesArray[i].weight + prevWeight);
+    //
+    //             if (linesArray[i].vertex1.id === stopVertexId)
+    //                 return;
+    //
+    //             bypass(linesArray[i].vertex2.id, stopVertexId, linesArray[i].weight);
+    //         }
+    // }
+
+    function bypass(vertexId, stopVertexId, prevWeight){
+
+        for (let i = 0; i < linesArray.length; i++)
+            if (linesArray[i].vertex1.id === vertexId) {
+
+                SPFASteps.push(linesArray[i]);
+
+                SPFAStepsStartWeighst.push(linesArray[i].weight);
+                SPFAStepsWeights.push(linesArray[i].weight + prevWeight);
+
+                if (linesArray[i].vertex1.id === stopVertexId)
+                    return;
+
+                bypass(linesArray[i].vertex2.id, stopVertexId, linesArray[i].weight);
+            }
+    }
+
+    function test(){
 
         for (let i = 0; i < SPFASteps.length; i++)
             prevStep();
@@ -368,138 +402,16 @@
         draw();
 
 
-        // JavaScript implementation of SPFA
-
-        // Graph is stored as vector of vector of pairs
-// first element of pair store vertex
-// second element of pair store weight
-        let graph = new Array(100000);
-
-        // Function to add edges in the graph
-// connecting a pair of vertex(frm) and weight
-// to another vertex(to) in graph
-        function addEdge(from, to, weight) {
-            graph[from].push([to, weight ]);
-
-        }
-
-        function addEdgesFromLines() {
-
-            if (linesArray !== null)
-                linesArray.forEach(function(line) {
-                    addEdge(
-                        line.vertex1.id,
-                        line.vertex2.id,
-                        line.weight
-                    );
-                })
-
-        }
-
-        // Function to print shortest distance from source
-        function print_distance(d,V) {
-            console.log("Vertex", " ", "Distance" + " from source");
-
-            for (let i = 1; i <= V; i++)
-                console.log( i+"     "+ d[i]);
-
-        }
-
-        // Function to compute the SPF algorithm
-        function shortestPathFaster(S,V) {
-            let d = new Array(V + 1); //Массив с кратчайшими расстояниями
-
-            // Boolean array to check if vertex
-            // is present in queue or not
-            let inQueue = new Array(V + 1);
-
-            // Initialize the distance from source to
-            // other vertex as Integer.MAX_VALUE(infinite)
-            for (let i = 0; i <= V; i++)
-                d[i] = Number.MAX_VALUE;
-
-            d[S] = 0;
-
-            let q = [];
-            q.push(S);
-            inQueue[S] = true;
-
-            while (q.length !== 0) {
-
-                // Take the front vertex from Queue
-                let u = q[0];
-                q.shift();
-                inQueue[u] = false;
-
-                // Relaxing all the adjacent edges of
-                // vertex taken from the Queue
-
-                console.log(u + ":");
-
-                for (let i = 0; i < graph[u].length; i++) {
-
-                    let v = graph[u][i][0];
-                    let weight = graph[u][i][1];
-
-                    //console.log(u + "--" + weight + "-->" + v);
-
-                    //printlnAlgConsole(u + "--" + weight + "-->" + v);
-
-
-                    foundedLine = findLineFromVertexesIds(u, v);
-
-                    if (d[v] > d[u] + weight) {
-
-                        d[v] = d[u] + weight;
-
-                        SPFAStepsWeights.push(d[u] + weight);
-
-                        //foundedLine.weight =  d[v] = d[u] + weight;
-
-                        // Check if vertex v is in Queue or not
-                        // if not then push it into the Queue
-                        if (!inQueue[v])
-                        {
-                            q.push(v);
-                            inQueue[v] = true;
-                        }
-                    } else
-                        SPFAStepsWeights.push(foundedLine.weight);
-
-                    SPFASteps.push(foundedLine);
-                    SPFAStepsStartWeighst.push(foundedLine.weight);
-
-
-                }
-            }
-
-            // Print the result
-            print_distance(d, V);
-        }
-
         let S = Number(document.getElementById("start_vertex").value);
-        let V = Number(document.getElementById("finish_vertex").value);
+        let F = Number(document.getElementById("finish_vertex").value);
 
-        for (let i = 0; i < graph.length; i++)
-            graph[i] = [];
+        bypass(S);
 
-
-
-        addEdgesFromLines();
-
-
-        // Calling shortestPathFaster function
-        shortestPathFaster(S, V);
 
         stepNumber = 0;
         updateStepsStatusView(0, SPFASteps.length);
 
-        printlnAlgConsole("Алгоритм для вершин " + S + " и " + V + " построен - " + SPFASteps.length + " шаг(-ов)" );
-
-// This code is contributed by unknown2108
-
     }
-
 
     function drawAllLines(){
 
@@ -551,9 +463,6 @@
                 //вычисление середины стрелки
                 x = (line.vertex1.x + line.vertex2.x) / 2;
                 y = (line.vertex1.y + line.vertex2.y) / 2;
-
-
-
 
 
                 ctx.beginPath();
