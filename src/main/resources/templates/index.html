@@ -74,7 +74,6 @@
 
 <body>
 
-
     <div id = "instrumnet_and_paint_wrapper">
         <div id = "paint_area" th:fragment = "paint_fragment">
             <canvas width='1000' height='800'  id="canvas">Обновите браузер</canvas>
@@ -127,7 +126,7 @@
 
 <script>
 
-    vertexMaxId = 0;
+    vertexMaxId = -1;
     lineMaxId = 0;
     vertexRadius = 20;
     liniSelectorRadius = 10;
@@ -161,6 +160,7 @@
         y = 0;
         selected = false;
         light = false;
+        dist = 0;
 
         constructor(x, y) {
             this.id = vertexMaxId + 1;
@@ -168,6 +168,22 @@
             this.y = y;
             vertexMaxId ++;
         }
+    }
+
+    class Step {
+        lineId;
+        lineLight;
+
+        vertexId;
+        vertexWeight;
+
+        constructor(lineId, lineLight, vertexId, vertexWeight) {
+            this.lineId = lineId;
+            this.lineLight = lineLight;
+            this.vertexId = vertexId;
+            this.vertexWeight = vertexWeight;
+        }
+
     }
 
     class Line {
@@ -193,6 +209,25 @@
 
     }
 
+    class Log{
+        textArea = document.getElementById("alg_console");
+        textLines = [];
+
+        addTextLine(message){
+            this.textLines.push(message);
+        }
+
+        printToLineNumber(numb){
+            this.textArea.value = "";
+            for (let i = 0; i < numb; i++) {
+                this.textArea.value += this.textLines[i] + '\n';
+            }
+        }
+
+    }
+
+    logger = new Log();
+
 
     var canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
@@ -209,15 +244,7 @@
 
     clearCanvas();
 
-    function clearAlgConsole(){
-        document.getElementById("alg_console").value = "";
-    }
 
-    clearAlgConsole();
-
-    function printlnAlgConsole(message){
-        document.getElementById("alg_console").value += message + "\n";
-    }
 
     function clearTimers(){
         for (let i = 0; i < SPFASteps.length; i++)
@@ -298,102 +325,148 @@
     function nextStep(){
 
         if (stepNumber < SPFASteps.length) {
-
-            fillSPFAstepsFalseLight();
-
             for (let i = 0; i <= stepNumber; i++) {
-                SPFASteps[i].light = true;
-                SPFASteps[i].vertex1.light = true;
-
-                if (SPFASteps[i].weight !== SPFAStepsWeights[i]){
-                    printlnAlgConsole("Обновлён вес ребра: " + SPFASteps[i].weight + "->" + SPFAStepsWeights[i]);
+                for (let j = 0; j < linesArray.length; j++) {
+                    if (linesArray[j].id === SPFASteps[i].lineId) {
+                        linesArray[j].light = SPFASteps[i].lineLight;
+                        break;
+                    }
                 }
 
-                SPFASteps[i].weight = SPFAStepsWeights[i];
+                logger.printToLineNumber(stepNumber + 1);
+
+                for (let j = 0; j < vertexArray.length; j++) {
+                    if (vertexArray[j].id === SPFASteps[i].vertexId){
+                        vertexArray[j].dist = SPFASteps[i].vertexWeight;
+                        break;
+                    }
+                }
 
             }
 
-            printedLine = SPFASteps[stepNumber];
-            printlnAlgConsole(printedLine.vertex1.id + "----(" + printedLine.weight + ")---->" + printedLine.vertex2.id);
-
-            updateStepsStatusView(stepNumber + 1, SPFASteps.length);
-            stepNumber ++;
-
+            stepNumber++;
         }
 
-        draw();
-        //console.log(stepNumber);
+        if (stepNumber > SPFASteps.length)
+            stepNumber = SPFASteps.length;
 
+        draw();
+        updateStepsStatusView(stepNumber, SPFASteps.length);
 
     }
 
-    function prevStep(){
-
-         if (stepNumber > 0) {
-
-             fillSPFAstepsFalseLight();
-
-             for (let i = 0; i < stepNumber - 1; i++) {
-                 SPFASteps[i].light = true;
-                 SPFASteps[i].vertex1.light = true;
-             }
-
-             SPFASteps[stepNumber - 1].weight = SPFAStepsStartWeighst[stepNumber - 1];
-
-             printedLine = SPFASteps[stepNumber - 1];
-             printlnAlgConsole(printedLine.vertex2.id + "<----(" + printedLine.weight + ")----" + printedLine.vertex1.id);
-
-             updateStepsStatusView(stepNumber - 1, SPFASteps.length);
-             stepNumber --;
-         }
-
-
-
-        draw();
-        console.log(stepNumber);
-
-    }
-
-
-    // function bypass_back(vertexId, stopVertexId, prevWeight){
-    //
-    //     for (let i = 0; i < linesArray.length; i++)
-    //         if (linesArray[i].vertex1.id === vertexId) {
-    //
-    //             SPFASteps.push(linesArray[i]);
-    //
-    //             SPFAStepsStartWeighst.push(linesArray[i].weight);
-    //             SPFAStepsWeights.push(linesArray[i].weight + prevWeight);
-    //
-    //             if (linesArray[i].vertex1.id === stopVertexId)
-    //                 return;
-    //
-    //             bypass(linesArray[i].vertex2.id, stopVertexId, linesArray[i].weight);
-    //         }
-    // }
-
-    function bypass(vertexId, stopVertexId, prevWeight){
+    function prevStep() {
 
         for (let i = 0; i < linesArray.length; i++)
-            if (linesArray[i].vertex1.id === vertexId) {
+            linesArray[i].light = false;
 
-                SPFASteps.push(linesArray[i]);
+            for (let i = 0; i < vertexArray.length; i++)
+                vertexArray[i].dist = 0;
 
-                SPFAStepsStartWeighst.push(linesArray[i].weight);
-                SPFAStepsWeights.push(linesArray[i].weight + prevWeight);
+                if (stepNumber > 0) {
 
-                if (linesArray[i].vertex1.id === stopVertexId)
-                    return;
+                    stepNumber--;
 
-                bypass(linesArray[i].vertex2.id, stopVertexId, linesArray[i].weight);
+                    for (let i = 0; i <= stepNumber; i++) {
+                        for (let j = 0; j < linesArray.length; j++) {
+                            if (linesArray[j].id === SPFASteps[i].lineId) {
+                                linesArray[j].light = SPFASteps[i].lineLight;
+                                break;
+                            }
+                        }
+
+                        logger.printToLineNumber(stepNumber);
+
+                        for (let j = 0; j < vertexArray.length; j++) {
+                            if (vertexArray[j].id === SPFASteps[i].vertexId) {
+                                vertexArray[j].dist = SPFASteps[i].vertexWeight;
+                                break;
+                            }
+                        }
+
+                    }
+
+
+                }
+
+
+                draw();
+                updateStepsStatusView(stepNumber, SPFASteps.length);
+
+    }
+
+
+
+    //---------------------------------
+
+    function BellmanFord(graph, V, E, src) {
+        // Инициализируйте расстояние между всеми вершинами как бесконечное.
+        var dis = Array(V).fill(1000000000);
+
+        // initialize distance of source as 0
+        dis[src] = 0;
+
+        // Relax all edges |V| - 1 times. A simple
+        // shortest path from src to any other
+        // vertex can have at-most |V| - 1 edges
+        for (var i = 0; i < V - 1; i++) {
+
+            for (var j = 0; j < E; j++) {
+
+                if ((dis[graph[j][0]] + graph[j][2]) < dis[graph[j][1]]) {
+                    //printlnAlgConsole(dis[graph[j][1]] + " updated to " + Number(dis[graph[j][0]] + graph[j][2]));
+                    //logger.addTextLine(dis[graph[j][1]] + " updated to " + Number(dis[graph[j][0]] + graph[j][2]));
+                    dis[graph[j][1]] = dis[graph[j][0]] + graph[j][2];
+                }
+
+                SPFASteps.push(new Step(graph[j][3], true, graph[j][4], dis[graph[j][1]] ));
+                SPFASteps.push(new Step(graph[j][3], false, graph[j][4], dis[graph[j][1]]  ));
+
+                logger.addTextLine(graph[j][0] + " -> " + graph[j][1]);
+                logger.addTextLine(graph[j][0] + " <- " + graph[j][1]);
+
             }
+        }
+
+        // check for negative-weight cycles.
+        // The above step guarantees shortest
+        // distances if graph doesn't contain
+        // negative weight cycle. If we get a
+        // shorter path, then there is a cycle.
+        for (var i = 0; i < E; i++) {
+
+            var x = graph[i][0];
+            var y = graph[i][1];
+            var weight = graph[i][2];
+            if ((dis[x] !== 1000000000) &&
+                (dis[x] + weight < dis[y]))
+                console.log("Graph contains negative" +
+                    " weight cycle");
+        }
+
+        console.log("Vertex Distance from Source");
+        for (var i = 0; i < V; i++)
+            console.log(i + "   " + dis[i] );
+    }
+
+    function graphFromVertexes(){
+        graph = [];
+
+        for (let i = 0; i < linesArray.length; i++) {
+            temp = [];
+            temp.push(linesArray[i].vertex1.id);
+            temp.push(linesArray[i].vertex2.id);
+            temp.push(linesArray[i].weight);
+            temp.push(linesArray[i].id);
+            temp.push(linesArray[i].vertex2.id);
+
+            graph.push(temp);
+        }
+
+        return graph;
     }
 
     function test(){
-
-        for (let i = 0; i < SPFASteps.length; i++)
-            prevStep();
-
 
         SPFASteps = [];
         SPFAStepsWeights = [];
@@ -405,7 +478,15 @@
         let S = Number(document.getElementById("start_vertex").value);
         let F = Number(document.getElementById("finish_vertex").value);
 
-        bypass(S);
+
+        var V = vertexArray.length; // Number of vertices in graph
+        var E = linesArray.length; // Number of edges in graph
+
+        graph = graphFromVertexes();
+
+        console.log(graph);
+
+        BellmanFord(graph, V, E, 0);
 
 
         stepNumber = 0;
@@ -504,6 +585,10 @@
                 ctx.font = "14px serif";
                 ctx.fillStyle = 'white';
                 ctx.fillText(vertex.id, vertex.x, vertex.y);
+
+                ctx.font = "14px serif";
+                ctx.fillStyle = 'black';
+                ctx.fillText(vertex.dist, vertex.x + vertexRadius, vertex.y);
 
             })
 
@@ -627,7 +712,6 @@
     }
 
     document.querySelector("#canvas").addEventListener("click", clickOnPaintArea);
-
 
 </script>
 
