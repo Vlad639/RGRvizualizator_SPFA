@@ -87,6 +87,7 @@
                 <div> <button onclick="operationType = 2" class = "build_button">Выбрать</button> </div>
                 <div> <button onclick="connectVertexes()" class = "build_button">Соединить</button> </div>
                 <div> <button onclick="operationType = 3" class = "build_button">Удалить вершину</button> </div>
+                <div> <button onclick="deleteLineBetweenSelectedVertexes()" class = "build_button">Удалить ребро между выбранными вершинами</button> </div>
             </div>
 
             <div id = "vizualization_div">
@@ -94,8 +95,7 @@
                 <button onclick="test()" class = "viz_instrum_class"> Просчитать алгоритм </button>
 
                 <div id = "vertexses_div">
-                    <div> <label class = "viz_instrum_class">Стартовая вершина:<input type="text" size="2" value="1" id = "start_vertex" class = "viz_instrum_class"> </label> </div>
-                    <label class = "viz_instrum_class">Финальная вершина:<input type="text" size="2" value="3" id = "finish_vertex" class = "viz_instrum_class"> </label>
+                    <div> <label class = "viz_instrum_class">Стартовая вершина:<input type="text" size="2" value="0" id = "start_vertex" class = "viz_instrum_class"> </label> </div>
                 </div>
 
                 <div>
@@ -114,7 +114,7 @@
 
             <div id = "alg_console_div">
                 <div>
-                    <textarea id = "alg_console">
+                    <textarea id = "alg_console" readonly>
                     </textarea>
                 </div>
                 <button onclick="clearAlgConsole()" id = "clear_console_button" value=""> Очистить </button>
@@ -224,6 +224,10 @@
             }
         }
 
+        clear(){
+            this.textArea.value = "";
+        }
+
     }
 
     logger = new Log();
@@ -244,6 +248,10 @@
 
     clearCanvas();
 
+
+    function clearAlgConsole(){
+        logger.clear();
+    }
 
 
     function clearTimers(){
@@ -277,6 +285,8 @@
     }
 
     function beginAuto(){
+
+        clearAlgConsole();
 
         test();
 
@@ -476,7 +486,6 @@
 
 
         let S = Number(document.getElementById("start_vertex").value);
-        let F = Number(document.getElementById("finish_vertex").value);
 
 
         var V = vertexArray.length; // Number of vertices in graph
@@ -486,7 +495,7 @@
 
         console.log(graph);
 
-        BellmanFord(graph, V, E, 0);
+        BellmanFord(graph, V, E, S);
 
 
         stepNumber = 0;
@@ -546,17 +555,15 @@
                 y = (line.vertex1.y + line.vertex2.y) / 2;
 
 
-                ctx.beginPath();
-                ctx.arc(x, y, liniSelectorRadius, 0, 2 * Math.PI, false);
 
-                ctx.strokeStyle = 'black';
-                ctx.stroke();
+
+
+                x = (line.vertex1.x + line.vertex2.x) / 2;
+                y = (line.vertex1.y + line.vertex2.y) / 2;
 
                 ctx.font = "14px serif";
                 ctx.fillStyle = 'black';
                 ctx.fillText(line.weight, x, y);
-
-
 
             })
 
@@ -608,6 +615,34 @@
         drawAllVertexes();
     }
 
+    function deleteLineBetweenSelectedVertexes(){
+        if (selectedVertexesNumbers !== 2) {
+            alert("Выбрано не 2 вершины!");
+            firstSelectedVertex = null;
+            secondSelectedVertex = null;
+            setSelectedFalseForAllVertexes();
+            selectedVertexesNumbers = 0;
+            draw();
+        }
+        else {
+            confirmResult = confirm("Удалить ребро между " + firstSelectedVertex.id + " и " + secondSelectedVertex.id + " вершинами?");
+
+            if (confirmResult) {
+                foundLine = findLineFromVertexesIds(firstSelectedVertex.id, secondSelectedVertex.id);
+
+                let i = linesArray.indexOf(foundLine);
+                linesArray.splice(i, 1);
+            }
+
+            firstSelectedVertex = null;
+            secondSelectedVertex = null;
+            setSelectedFalseForAllVertexes();
+            selectedVertexesNumbers = 0;
+            draw();
+        }
+
+    }
+
     function connectVertexes(){
             if (selectedVertexesNumbers !== 2) {
                 alert("Выбрано не 2 вершины!");
@@ -618,7 +653,7 @@
                 draw();
             }
             else {
-                promptResult = prompt("Соединить вершины" + firstSelectedVertex.id + " и " + secondSelectedVertex.id + "?"
+                promptResult = prompt("Соединить вершины " + firstSelectedVertex.id + " и " + secondSelectedVertex.id + "?"
                 +"\nВес ребра:");
 
                 if (promptResult !== null) {
@@ -649,6 +684,14 @@
         if (linesArray.length === 1)
             if (linesArray[0].vertex1.id === deletedVertexId || linesArray[0].vertex2.id === deletedVertexId)
                  linesArray = [];
+
+    }
+
+    function recalculateVertexesIds(){
+        for (let i = 0; i < vertexArray.length; i++)
+            vertexArray[i].id = i;
+
+        vertexMaxId = vertexArray.length - 1;
 
     }
 
@@ -704,6 +747,8 @@
                     vertexArray.splice(i, 1);
 
                     deleteLinesWhenContainVertexWithId(deletedVertex.id);
+                    recalculateVertexesIds();
+                    draw();
                 }
             }
         }
