@@ -8,12 +8,12 @@
 
         #paint_area {
             width: 1000px;
-            height: 800px;
+            height: 550px;
         }
 
         #instrument_panel {
             width: 400px;
-            height: 800px;
+            height: 550px;
             background-color: gainsboro;
         }
 
@@ -31,13 +31,13 @@
         }
 
         #alg_console_div {
-            height: 350px;
+            height: 50px;
         }
 
         #alg_console {
             margin-top: 20px;
             height: 250px;
-            width: 350px;
+            width: 1200px;
         }
 
         #build_panel {
@@ -64,9 +64,6 @@
             text-align: right;
         }
 
-        #finish_vertex {
-            text-align: right;
-        }
 
     </style>
 </head>
@@ -76,7 +73,7 @@
 
     <div id = "instrumnet_and_paint_wrapper">
         <div id = "paint_area" th:fragment = "paint_fragment">
-            <canvas width='1000' height='800'  id="canvas">Обновите браузер</canvas>
+            <canvas width='1000' height='550'  id="canvas">Обновите браузер</canvas>
         </div>
 
         <div id = "instrument_panel">
@@ -111,16 +108,18 @@
 
             </div>
 
-            <div id = "alg_console_div">
-                <div>
-                    <textarea id = "alg_console" readonly>
-                    </textarea>
-                </div>
-               <!-- <button onclick="clearAlgConsole()" id = "clear_console_button" value=""> Очистить </button> -->
-            </div>
+
 
         </div>
     </div>
+
+    <div id = "alg_console_div">
+        <div>
+                    <textarea id = "alg_console" readonly>
+                    </textarea>
+        </div>
+    </div>
+
 </body>
 
 <script>
@@ -143,6 +142,7 @@
     firstSelectedVertex = null;
     secondSelectedVertex = null;
     stepNumber = 0;
+    allSteps = 0;
 
     class Point {
         x = 0;
@@ -159,7 +159,7 @@
         y = 0;
         selected = false;
         light = false;
-        dist = "INF";
+        dist = "";
 
         constructor(x, y) {
             this.id = vertexMaxId + 1;
@@ -170,17 +170,53 @@
     }
 
     class Step {
-        lineId;
-        lineLight;
+        dis;
+        vis;
+        queue;
+        comment = "";
 
-        vertexId;
-        vertexWeight;
+        constructor(dis, vis, queue) {
+            this.dis = dis;
+            this.vis = vis;
+            this.queue = queue;
+        }
 
-        constructor(lineId, lineLight, vertexId, vertexWeight) {
-            this.lineId = lineId;
-            this.lineLight = lineLight;
-            this.vertexId = vertexId;
-            this.vertexWeight = vertexWeight;
+        toString(){
+
+            let result = "";
+
+            result += "Очередь: [";
+            for (let i = 0; i < this.queue.length; i++) {
+                result += this.queue[i] + "] [";
+            }
+
+            result = result.substring(0, result.length-2);
+
+            result += '\n' + "Массив расстояний: [";
+            for (let i = 0; i < this.dis.length - 1; i++) {
+                if (this.dis[i] === Number.MAX_VALUE) {
+                    result += "INF] [";
+                }
+                else {
+                    result += this.dis[i] + "] [";
+                }
+            }
+
+            result = result.substring(0, result.length-2);
+
+            result += '\n' + "Массив с посещёнными вершинами: [";
+            for (let i = 0; i < this.vis.length - 1; i++) {
+                result += this.vis[i] + "] [";
+            }
+
+            result = result.substring(0, result.length-2);
+
+            if (this.comment !== ""){
+                result += '\n' + this.comment;
+            }
+
+            return result;
+
         }
 
     }
@@ -278,7 +314,6 @@
             }
 
         }
-
         vizPause = !vizPause;
 
     }
@@ -305,7 +340,6 @@
         }
     }
 
-
     function findLineFromVertexesIds(vertex1Id, vertex2Id) {
         let result = null;
         if (linesArray !== null) {
@@ -320,154 +354,161 @@
         }
     }
 
-
     function updateStepsStatusView(currentStep, allStep){
         text = currentStep + "/" + allStep
         document.getElementById("steps_status").innerText = text;
     }
 
-    function nextStep(){
+    function changeVertexesDist(stepNumber){
 
-        if (stepNumber < SPFASteps.length) {
-            for (let i = 0; i <= stepNumber; i++) {
-                for (let j = 0; j < linesArray.length; j++) {
-                    if (linesArray[j].id === SPFASteps[i].lineId) {
-                        linesArray[j].light = SPFASteps[i].lineLight;
-                        break;
+        dis = SPFASteps[stepNumber].dis;
+
+        for (let i = 0; i < vertexArray.length; i++){
+            for (let j = 0; j < dis.length; j++) {
+                if (vertexArray[i].id === j) {
+                    if (dis[j] === Number.MAX_VALUE){
+                        vertexArray[i].dist = "INF";
+                    }
+                    else {
+                        vertexArray[i].dist = dis[j];
                     }
                 }
-
-                logger.printToLineNumber(stepNumber + 1);
-
-                for (let j = 0; j < vertexArray.length; j++) {
-                    if (vertexArray[j].id === SPFASteps[i].vertexId){
-                        vertexArray[j].dist = SPFASteps[i].vertexWeight;
-                        break;
-                    }
-                }
-
             }
-
-            stepNumber++;
         }
 
-        if (stepNumber > SPFASteps.length)
-            stepNumber = SPFASteps.length;
-
         draw();
+
+    }
+
+    function nextStep(){
+
+        if (stepNumber < allSteps) {
+
+            logger.addTextLine(
+                "Шаг " + stepNumber + '\n' +
+                SPFASteps[stepNumber] + "\n----------------------------------------------");
+            logger.printToLineNumber(stepNumber + 1);
+
+            changeVertexesDist(stepNumber);
+            stepNumber ++;
+        }
+
         updateStepsStatusView(stepNumber, SPFASteps.length);
 
     }
 
     function prevStep() {
 
-        for (let i = 0; i < linesArray.length; i++)
-            linesArray[i].light = false;
+        if (stepNumber > 0) {
 
-            for (let i = 0; i < vertexArray.length; i++)
-                vertexArray[i].dist = "INF";
+            logger.addTextLine(
+                "Шаг " + stepNumber + '\n' +
+                SPFASteps[stepNumber] + "\n----------------------------------------------");
+            logger.printToLineNumber(stepNumber - 1);
 
-                if (stepNumber > 0) {
+            stepNumber --;
 
-                    stepNumber--;
-
-                    for (let i = 0; i <= stepNumber; i++) {
-                        for (let j = 0; j < linesArray.length; j++) {
-                            if (linesArray[j].id === SPFASteps[i].lineId) {
-                                linesArray[j].light = SPFASteps[i].lineLight;
-                                break;
-                            }
-                        }
-
-                        logger.printToLineNumber(stepNumber);
-
-                        for (let j = 0; j < vertexArray.length; j++) {
-                            if (vertexArray[j].id === SPFASteps[i].vertexId) {
-                                vertexArray[j].dist = SPFASteps[i].vertexWeight;
-                                break;
-                            }
-                        }
-
-                    }
-
-
+            if (stepNumber >= 1) {
+                changeVertexesDist(stepNumber - 1);
+            }
+            else {
+                for (let i = 0; i < vertexArray.length; i++) {
+                    vertexArray[i].dist = "";
                 }
 
-
                 draw();
-                updateStepsStatusView(stepNumber, SPFASteps.length);
+            }
+        }
+
+        updateStepsStatusView(stepNumber, SPFASteps.length);
 
     }
 
 
+    function addStep(dis, vis, q, v, u, w){
+        newStep = new Step(dis.slice(), vis.slice(), q.slice());
+
+        if (v !== -1 && v !== undefined){ //d[v] = d[u] + weight;
+            newStep.comment = "Обновлён вес: [" + v + "] = [" + u + "] + " + w;
+        }
+
+        SPFASteps.push(newStep);
+
+    }
 
     //---------------------------------
 
-    function BellmanFord(graph, V, E, src) {
-        // Инициализируйте расстояние между всеми вершинами как бесконечное.
-        INF = 1000000000;
-        var dis = Array(V).fill(INF);
+    function shortestPathFaster(graph, S, V) {
+        // Create array d to store shortest distance
+        let d = new Array(V + 1);
 
-        dis[src] = 0;
+        // Boolean array to check if vertex
+        // is present in queue or not
+        let inQueue = new Array(V + 1);
 
+        // Initialize the distance from source to
+        // other vertex as Integer.MAX_VALUE(infinite)
+        for (let i = 0; i <= V; i++)
+        {
+            d[i] = Number.MAX_VALUE;
+        }
+        d[S] = 0;
 
-        // Relax all edges |V| - 1 times. A simple
-        // shortest path from src to any other
-        // vertex can have at-most |V| - 1 edges
-        for (var i = 0; i < V - 1; i++) {
+        let q = [];
+        q.push(S);
+        inQueue[S] = true;
 
-            for (var j = 0; j < E; j++) {
+        addStep(d.slice(), inQueue.slice(), q.slice());
 
+        while (q.length !== 0) {
 
-                if ((dis[graph[j][0]] + graph[j][2]) < dis[graph[j][1]]) {
-                    if (dis[graph[j][1]] === INF)
-                        message = "Обновлён вес INF = " + Number(dis[graph[j][0]] + graph[j][2]);
-                    else
-                        message = "Обновлён вес " + dis[graph[j][1]] + " = " + Number(dis[graph[j][0]] + graph[j][2]);
+            // Take the front vertex from Queue
+            let u = q[0];
+            q.shift();
+            inQueue[u] = false;
 
-                    dis[graph[j][1]] = dis[graph[j][0]] + graph[j][2];
+            //addStep(d, inQueue, q);
 
+            // Relaxing all the adjacent edges of
+            // vertex taken from the Queue
+
+            stepV = -1;
+            stepU = -1;
+            stepWeight = -1;
+            for (let i = 0; i < graph[u].length; i++) {
+
+                let v = graph[u][i][0];
+                let weight = graph[u][i][1];
+
+                if (d[v] > d[u] + weight) {
+                    d[v] = d[u] + weight;
+
+                    stepV = v;
+                    stepU = u;
+                    stepWeight = weight;
+
+                    if (!inQueue[v]) {
+                        q.push(v);
+                        inQueue[v] = true;
+                    }
                 }
-
-                SPFASteps.push(new Step(graph[j][3], true, graph[j][4], dis[graph[j][1]] ));
-                SPFASteps.push(new Step(graph[j][3], false, graph[j][4], dis[graph[j][1]]  ));
-
-
-                logger.addTextLine(graph[j][0] + " -> " + graph[j][1] + '\n' + message);
-                logger.addTextLine(graph[j][0] + " <- " + graph[j][1]);
-
+                addStep(d.slice(), inQueue.slice(), q.slice(), stepV, stepU, stepWeight);
             }
+
+            //addStep(d.slice(), inQueue.slice(), q.slice(), stepV, stepU, stepWeight);
+
         }
-
-        // check for negative-weight cycles.
-        // The above step guarantees shortest
-        // distances if graph doesn't contain
-        // negative weight cycle. If we get a
-        // shorter path, then there is a cycle.
-        for (var i = 0; i < E; i++) {
-
-            var x = graph[i][0];
-            var y = graph[i][1];
-            var weight = graph[i][2];
-            if ((dis[x] !== INF) &&
-                (dis[x] + weight < dis[y]))
-                alert("График содержит цикл с отрицательным весом!");
-        }
-
     }
 
     function graphFromVertexes(){
         graph = [];
+        for (let i = 0; i < 100000; i++)
+        {
+            graph[i] = [];
+        }
 
         for (let i = 0; i < linesArray.length; i++) {
-            temp = [];
-            temp.push(linesArray[i].vertex1.id);
-            temp.push(linesArray[i].vertex2.id);
-            temp.push(linesArray[i].weight);
-            temp.push(linesArray[i].id);
-            temp.push(linesArray[i].vertex2.id);
-
-            graph.push(temp);
+            graph[linesArray[i].vertex1.id].push([linesArray[i].vertex2.id, linesArray[i].weight]);
         }
 
         return graph;
@@ -481,21 +522,15 @@
 
         draw();
 
-
         let S = Number(document.getElementById("start_vertex").value);
-
-
         var V = vertexArray.length; // Number of vertices in graph
-        var E = linesArray.length; // Number of edges in graph
 
         graph = graphFromVertexes();
 
-        console.log(graph);
 
-        BellmanFord(graph, V, E, S);
-
-
+        shortestPathFaster(graph, S, V);
         stepNumber = 0;
+        allSteps = SPFASteps.length;
         clearTimers();
         clearAlgConsole();
         updateStepsStatusView(0, SPFASteps.length);
@@ -553,10 +588,6 @@
                 x = (line.vertex1.x + line.vertex2.x) / 2;
                 y = (line.vertex1.y + line.vertex2.y) / 2;
 
-
-
-
-
                 x = (line.vertex1.x + line.vertex2.x) / 2;
                 y = (line.vertex1.y + line.vertex2.y) / 2;
 
@@ -567,6 +598,7 @@
             })
 
     }
+
 
     function drawAllVertexes(){
 
@@ -727,6 +759,9 @@
         }
 
         if (operationType === 3) {
+
+            firstSelectedVertex = null;
+            secondSelectedVertex = null;
 
             deletedVertex = null;
 
