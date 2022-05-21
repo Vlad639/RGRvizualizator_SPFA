@@ -243,30 +243,8 @@ function getMinusOrPlusOne(){
     }
 }
 
+
 function generateRandomGraph() {
-    n = getRandomInRange(5, 7);
-    minWeight = -5;
-    maxWeight = 15;
-    pathMatrix = new Array(n);
-    p = 0.45; //'Вероятность' существования пути
-
-    for (let i = 0; i < n; i++){
-        pathMatrix[i] = new Array(n);
-        for (let j = 0; j < n; j++){
-            if (Math.random()  > (1 - p)){
-                pathMatrix[i][j] = getRandomInRange(minWeight, maxWeight);
-            }
-            else {
-                pathMatrix[i][j] = 0;
-            }
-
-            if (i === j) {
-                pathMatrix[i][j] = 0;
-            }
-
-
-        }
-    }
 
     vertexArray = [];
     linesArray = [];
@@ -277,58 +255,85 @@ function generateRandomGraph() {
     clearTimers();
     clearTimers();
 
-    //Вершины расставляются по окружности
-
-    centerX = 500;
-    centerY = 275;
-    radius = 230;
-
-    angleOffset = 360 / n;
-
-    for(let angle = 0; angle < 360; angle += angleOffset){
-        angleInRad = angle * Math.PI / 180;
-
-        x = centerX + radius * Math.cos(angleInRad);
-        y = centerY - radius * Math.sin(angleInRad);
+    //n = getRandomInRange(5, 7);
+    n = 3;
+    levels = [];
+    levels.push([1]);
 
 
-        xOffset = Math.random() * 20 * getMinusOrPlusOne();
-        yOffset = Math.random() * 20 * getMinusOrPlusOne();
-
-        vertexArray.push(new Vertex(x + xOffset, y + yOffset));
+    for (let i = 1; i < n; i++) {
+        currentLevelContent = [];
+        for (let j = 0; j < levels[i-1].length; j++) {
+            for (let k = 0; k < levels[i-1][j]; k++) {
+                numberOfChild = getRandomInRange(2, 3);
+                currentLevelContent.push(numberOfChild);
+            }
+        }
+        levels.push(currentLevelContent);
     }
 
+
+    console.clear();
+    for (let i = 0; i < n; i++) {
+        console.log(levels[i]);
+    }
+
+    vertexInLastLevel = levels[n-1].length;
+    //console.log(vertexInLastLevel);
+
+    drawZoneWidth = 800;
+
+    rootX = 500;
+    rootY = 50;
+
+    xOffset = 0;
+    yOffset = 100;
+
+    createVertexY = rootY;
+    createVertexX = rootX;
+
+
+
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < levels[i].length; j++) {
+            for (let k = 0; k < levels[i][j]; k++) {
+                vertexArray.push(new Vertex(createVertexX, createVertexY));
+                createVertexX += xOffset;
+            }
+        }
+
+        sumChildNumber = 0;
+
+        if (i < n - 1)
+            for (let j = 0; j < levels[i + 1].length; j++) {
+                sumChildNumber += levels[i + 1][j];
+            }
+
+        //console.log(sumChildNumber);
+
+        xOffset = drawZoneWidth / (Number(sumChildNumber) + 1);
+        createVertexX = rootX - drawZoneWidth / 2 + xOffset;
+
+        createVertexY += yOffset;
+    }
     recalculateVertexesIds();
 
-    for (let i = 0; i < n; i++){
-        for (let j = 0; j < n; j++){
-            if (pathMatrix[i][j] !== 0 && pathMatrix[j][i] !== 0){
-                if (Math.random() > Math.random()){
-                    pathMatrix[i][j] = 0;
-                }
-                else {
-                    pathMatrix[j][i] = 0;
-                }
+    //прокладывание связей
+
+
+    parentVertexesIds = [];
+    id = 0;
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < levels[i].length; j++) {
+            for (let k = 0; k < levels[i][j]; k++) {
+                parentVertexesIds.push(id);
+                id ++;
             }
         }
     }
 
-    // console.clear();
-    // for (let i = 0; i < n; i++){
-    //     console.log(pathMatrix[i]);
-    // }
-    // console.log("---------")
+    console.log(parentVertexesIds);
 
-    for (let i = 0; i < n; i++){
-        for (let j = 0; j < n; j++){
-            if (pathMatrix[i][j] !== 0){
-                createdLine = new Line(vertexArray[i], vertexArray[j]);
-                createdLine.weight = pathMatrix[i][j];
-
-                linesArray.push(createdLine);
-            }
-        }
-    }
 
     draw();
 }
