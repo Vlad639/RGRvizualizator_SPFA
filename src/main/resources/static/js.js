@@ -18,6 +18,19 @@ secondSelectedVertex = null;
 stepNumber = 0;
 allSteps = 0;
 
+let sz = 100005;
+
+// Number of vertices
+let  n;
+// Adjacency list representation
+// of the tree
+let tree = new Array(sz);
+// Array that stores the subtree size
+let subtree_size = new Array(sz);
+// Array to mark all the
+// vertices which are visited
+let vis = new Array(sz);
+
 class Point {
     x = 0;
     y = 0;
@@ -44,51 +57,76 @@ class Vertex {
 }
 
 class Step {
-    dis;
-    vis;
-    queue;
+
+    tree;
+    subTree;
+    visited;
     comment = "";
 
-    constructor(dis, vis, queue) {
-        this.dis = dis;
-        this.vis = vis;
-        this.queue = queue;
+    constructor(tree, subTree, visited) {
+        this.tree = tree;
+        this.subTree = subTree;
+        this.visited = visited;
     }
 
     toString(){
 
         let result = "";
 
-        result += "Очередь: [";
-        for (let i = 0; i < this.queue.length; i++) {
-            result += this.queue[i] + "] [";
-        }
-
-        result = result.substring(0, result.length-2);
-
-        result += '\n' + "Массив расстояний: [";
-        for (let i = 0; i < this.dis.length - 1; i++) {
-            if (this.dis[i] === Number.MAX_VALUE) {
-                result += "INF] [";
+        result += "Размер поддеревьев: [";
+        for (let i = 0; i < n; i++) {
+            if (i < n - 1) {
+                result += this.subTree[i] + ", ";
             }
             else {
-                result += this.dis[i] + "] [";
+                result += this.subTree[i] + "]";
             }
         }
 
-        result = result.substring(0, result.length-2);
+        result += "\n";
 
-        result += '\n' + "Массив с посещёнными вершинами: [";
-        for (let i = 0; i < this.vis.length - 1; i++) {
-            result += this.vis[i] + "] [";
+        result += "Посещённые вершины: [";
+        for (let i = 0; i < n; i++) {
+            if (i < n - 1) {
+                result += this.visited[i] + ", ";
+            }
+            else {
+                result += this.visited[i] + "]";
+            }
         }
 
-        result = result.substring(0, result.length-2);
+        result += "\n";
 
-        if (this.comment !== ""){
-            result += '\n' + this.comment;
-        }
-
+        result += this.comment;
+        // for (let i = 0; i < this.queue.length; i++) {
+        //     result += this.queue[i] + "] [";
+        // }
+        //
+        // result = result.substring(0, result.length-2);
+        //
+        // result += '\n' + "Массив расстояний: [";
+        // for (let i = 0; i < this.dis.length - 1; i++) {
+        //     if (this.dis[i] === Number.MAX_VALUE) {
+        //         result += "INF] [";
+        //     }
+        //     else {
+        //         result += this.dis[i] + "] [";
+        //     }
+        // }
+        //
+        // result = result.substring(0, result.length-2);
+        //
+        // result += '\n' + "Массив с посещёнными вершинами: [";
+        // for (let i = 0; i < this.vis.length - 1; i++) {
+        //     result += this.vis[i] + "] [";
+        // }
+        //
+        // result = result.substring(0, result.length-2);
+        //
+        // if (this.comment !== ""){
+        //     result += '\n' + this.comment;
+        // }
+        //
         return result;
 
     }
@@ -363,11 +401,11 @@ function nextStep(){
     if (stepNumber < allSteps) {
 
         logger.addTextLine(
-            "Шаг " + stepNumber + '\n' +
+            "Шаг " + Number(stepNumber) + '\n' +
             SPFASteps[stepNumber] + "\n----------------------------------------------");
         logger.printToLineNumber(stepNumber + 1);
 
-        changeVertexesDist(stepNumber);
+        // changeVertexesDist(stepNumber);
         stepNumber ++;
     }
 
@@ -379,23 +417,25 @@ function prevStep() {
 
     if (stepNumber > 0) {
 
+
         logger.addTextLine(
-            "Шаг " + stepNumber + '\n' +
+            "Шаг " + Number(stepNumber) + '\n' +
             SPFASteps[stepNumber] + "\n----------------------------------------------");
+
         logger.printToLineNumber(stepNumber - 1);
 
         stepNumber --;
-
-        if (stepNumber >= 1) {
-            changeVertexesDist(stepNumber - 1);
-        }
-        else {
-            for (let i = 0; i < vertexArray.length; i++) {
-                vertexArray[i].dist = "";
-            }
-
-            draw();
-        }
+        //
+        // if (stepNumber >= 1) {
+        //     changeVertexesDist(stepNumber - 1);
+        // }
+        // else {
+        //     for (let i = 0; i < vertexArray.length; i++) {
+        //         vertexArray[i].dist = "";
+        //     }
+        //
+        //     draw();
+        // }
     }
 
     updateStepsStatusView(stepNumber, SPFASteps.length);
@@ -403,12 +443,9 @@ function prevStep() {
 }
 
 
-function addStep(dis, vis, q, v, u, w){
-    newStep = new Step(dis.slice(), vis.slice(), q.slice());
-
-    if (v !== -1 && v !== undefined){ //d[v] = d[u] + weight;
-        newStep.comment = "Обновлён вес: [" + v + "] = [" + u + "] + " + w;
-    }
+function addStep(tree, subTree, visited, comment){
+    newStep = new Step(tree.slice(), subTree.slice(), visited.slice());
+    newStep.comment = comment;
 
     SPFASteps.push(newStep);
 
@@ -416,95 +453,16 @@ function addStep(dis, vis, q, v, u, w){
 
 //---------------------------------
 
-function shortestPathFaster(graph, S, V) {
-    // Create array d to store shortest distance
-    let d = new Array(V + 1);
-
-    // Boolean array to check if vertex
-    // is present in queue or not
-    let inQueue = new Array(V + 1);
-
-    // Initialize the distance from source to
-    // other vertex as Integer.MAX_VALUE(infinite)
-    for (let i = 0; i <= V; i++)
-    {
-        d[i] = Number.MAX_VALUE;
-    }
-    d[S] = 0;
-
-    let q = [];
-    q.push(S);
-    inQueue[S] = true;
-
-    addStep(d.slice(), inQueue.slice(), q.slice());
-
-    while (q.length !== 0) {
-
-        // Take the front vertex from Queue
-        let u = q[0];
-        q.shift();
-        inQueue[u] = false;
-
-        //addStep(d, inQueue, q);
-
-        // Relaxing all the adjacent edges of
-        // vertex taken from the Queue
-
-        stepV = -1;
-        stepU = -1;
-        stepWeight = -1;
-        for (let i = 0; i < graph[u].length; i++) {
-
-            let v = graph[u][i][0];
-            let weight = graph[u][i][1];
-
-            if (d[v] > d[u] + weight) {
-                d[v] = d[u] + weight;
-
-                stepV = v;
-                stepU = u;
-                stepWeight = weight;
-
-                if (!inQueue[v]) {
-                    q.push(v);
-                    inQueue[v] = true;
-                }
-            }
-            addStep(d.slice(), inQueue.slice(), q.slice(), stepV, stepU, stepWeight);
-        }
-
-    }
-}
 
 function graphFromVertexes(){
-    // graph = [];
-    // for (let i = 0; i < 100; i++)
-    // {
-    //     graph[i] = [];
-    // }
-    //
     for (let i = 0; i < linesArray.length; i++) {
-        //graph[linesArray[i].vertex1.id].push([linesArray[i].vertex2.id, linesArray[i].weight]);
         tree[linesArray[i].vertex1.id].push(linesArray[i].vertex2.id);
-
-        // Add b to a's list
         tree[linesArray[i].vertex2.id].push(linesArray[i].vertex1.id);
     }
 
 }
 
-let sz = 100005;
 
-// Number of vertices
-let  n;
-// Adjacency list representation
-// of the tree
-let tree = new Array(sz);
-// Array that stores the subtree size
-let subtree_size = new Array(sz);
-// Array to mark all the
-// vertices which are visited
-let vis = new Array(sz);
 
 function dfs(node)
 {
@@ -517,11 +475,14 @@ function dfs(node)
     {
 
         // If not already visited
-        if (vis[tree[node][child]] == 0)
+        if (vis[tree[node][child]] === 0)
         {
 
             // Recursive call for the child
+            addStep(tree.slice(), subtree_size.slice(), vis.slice(), "dfs");
             subtree_size[node] += dfs(tree[node][child]);
+
+
         }
     }
     return subtree_size[node];
@@ -539,11 +500,17 @@ function contribution(node,ans)
     {
 
         // If it is not already visited
-        if (vis[tree[node][child]] == 0)
+        if (vis[tree[node][child]] === 0)
         {
             ans += (subtree_size[tree[node][child]] *
                 (n - subtree_size[tree[node][child]]));
+
+
+            addStep(tree.slice(), subtree_size.slice(), vis.slice(), "contribution, ans += "+ Number(subtree_size[tree[node][child]]) + "*" +
+            Number((n - subtree_size[tree[node][child]])) + ", ans = " + ans);
+
             ans = contribution(tree[node][child], ans);
+
         }
     }
     return ans;
@@ -596,11 +563,11 @@ function test(){
     //
     //
     // shortestPathFaster(graph, S, V);
-    // stepNumber = 0;
-    // allSteps = SPFASteps.length;
-    // clearTimers();
-    // clearAlgConsole();
-    // updateStepsStatusView(0, SPFASteps.length);
+    stepNumber = 0;
+    allSteps = SPFASteps.length;
+    clearTimers();
+    clearAlgConsole();
+    updateStepsStatusView(0, SPFASteps.length);
 
 }
 
