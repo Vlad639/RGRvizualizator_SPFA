@@ -139,7 +139,6 @@ class Line {
     coordinate2;
     vertex1;
     vertex2;
-    weight = Math.round(Math.random() * 20);
     light = false;
 
     constructor(vertex1, vertex2) {
@@ -270,12 +269,6 @@ function generateRandomGraph() {
             }
         }
         levels.push(currentLevelContent);
-    }
-
-
-    console.clear();
-    for (let i = 0; i < n; i++) {
-        console.log(levels[i]);
     }
 
 
@@ -593,57 +586,14 @@ function drawAllLines(){
         linesArray.forEach(function(line) {
 
             arrowColor = 'black';
-            headLen = 22; // Длина головы стрелки
-
-            if (line.light)
-                arrowColor = 'red';
-
-            deltaX = Math.abs(line.coordinate2.x - line.coordinate1.x);
-            deltaY = Math.abs(line.coordinate1.y - line.coordinate2.y);
-
-            tg = deltaX / deltaY;
-            angle = Math.atan(tg);
-
-            vertex1X = line.coordinate1.x;
-            vertex1Y = line.coordinate1.y;
-
-            vertex2X = line.coordinate2.x;
-            vertex2Y = line.coordinate2.y;
-
-            if (vertex1X < vertex2X)
-                x = vertex2X + vertexRadius * Math.cos(1.5 * Math.PI - angle);
-            else
-                x = vertex2X + vertexRadius * Math.cos(1.5 * Math.PI + angle);
-
-            if (vertex1Y < vertex2Y)
-                y = vertex2Y + vertexRadius * Math.sin(1.5 * Math.PI - angle);
-            else
-                y = vertex2Y - vertexRadius * Math.sin(1.5 * Math.PI + angle);
-
-            dx = x - vertex1X;
-            dy = y - vertex1Y;
-            angle = Math.atan2(dy, dx);
 
             ctx.beginPath();
             ctx.strokeStyle = arrowColor;
-            ctx.moveTo(vertex1X, vertex1Y);
-            ctx.lineTo(x, y);
-            ctx.lineTo(x - headLen * Math.cos(angle - Math.PI / 6), y - headLen * Math.sin(angle - Math.PI / 6));
-            ctx.moveTo(x, y);
-            ctx.lineTo(x - headLen * Math.cos(angle + Math.PI / 6), y - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.moveTo(line.vertex1.x, line.vertex1.y);
+            ctx.lineTo(line.vertex2.x, line.vertex2.y);
 
             ctx.stroke();
 
-            //вычисление середины стрелки
-            x = (line.vertex1.x + line.vertex2.x) / 2;
-            y = (line.vertex1.y + line.vertex2.y) / 2;
-
-            x = (line.vertex1.x + line.vertex2.x) / 2;
-            y = (line.vertex1.y + line.vertex2.y) / 2;
-
-            ctx.font = "14px serif";
-            ctx.fillStyle = 'black';
-            ctx.fillText(line.weight, x, y);
 
         })
 
