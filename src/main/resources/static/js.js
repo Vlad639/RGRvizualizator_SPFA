@@ -184,12 +184,15 @@ function pause(){
     pauseButton = document.getElementById("pause_button");
 
     if (vizPause)
-        pauseButton.innerText = "Пауза";
+        pauseButton.innerText = "II";
     else
-        pauseButton.innerText = "Продолжить";
+        pauseButton.innerText = ">";
 
-    if (!vizPause)
+    delayTime = document.getElementById("r1").value;
+
+    if (!vizPause) {
         clearTimers();
+    }
     else {
         for (let i = 0; i < (SPFASteps.length - stepNumber); i++) {
             timersArray[i] = setTimeout(() => {
@@ -228,7 +231,7 @@ function generateRandomGraph() {
     clearTimers();
 
     //n = getRandomInRange(5, 7);
-    n = 4;
+    n = getRandomInRange(3, 4);
     levels = [];
     levels.push([1]);
 
@@ -251,7 +254,7 @@ function generateRandomGraph() {
     rootY = 50;
 
     xOffset = 0;
-    yOffset = 100;
+    yOffset = 110;
 
     createVertexY = rootY;
     createVertexX = rootX;
@@ -313,6 +316,7 @@ function generateRandomGraph() {
 
 
 
+    test();
     draw();
 }
 
@@ -324,11 +328,10 @@ function beginAuto(){
     test();
 
     pauseButton = document.getElementById("pause_button");
-    pauseButton.innerText = "Пауза";
 
-    vizPause = false;
+    vizPause = true;
 
-    delayTime = document.getElementById("delay_time").value;
+    delayTime = document.getElementById("r1").value;
 
     clearTimers();
 
@@ -338,20 +341,8 @@ function beginAuto(){
         }, delayTime * (i + 1));
     }
 }
+beginAuto();
 
-function findLineFromVertexesIds(vertex1Id, vertex2Id) {
-    let result = null;
-    if (linesArray !== null) {
-        linesArray.forEach(function (line) {
-            if (line.vertex1.id === vertex1Id && line.vertex2.id === vertex2Id) {
-                result = line;
-                return "break";
-            }
-        })
-        return result;
-
-    }
-}
 
 function updateStepsStatusView(currentStep, allStep){
     text = currentStep + "/" + allStep
@@ -510,7 +501,9 @@ function getSum()
     return ans;
 }
 
-
+function workWithRange(){
+    //document.getElementById("delay_time").innerHTML = document.getElementById("r1").value;
+}
 
 function test(){
 
@@ -530,7 +523,7 @@ function test(){
 
     n = vertexArray.length;
     graphFromVertexes();
-    alert("Результат: " + getSum());
+    console.log("Результат: " + getSum());
 
     stepNumber = 0;
     allSteps = SPFASteps.length;
@@ -593,12 +586,6 @@ function drawAllVertexes(){
 
 }
 
-function setSelectedFalseForAllVertexes(){
-    if (vertexArray !== null)
-        vertexArray.forEach(function(vertex) {
-            vertex.selected = false;
-        })
-}
 
 function draw() {
     clearCanvas();
@@ -639,9 +626,6 @@ function recalculateVertexesIds(){
 function clickOnPaintArea(event){
     x = event.offsetX;
     y = event.offsetY;
-
-    // firstSelectedVertex = null;
-    // secondSelectedVertex = null;
 
     if (operationType === 1) {
         vertexArray.push(new Vertex(x, y));
@@ -712,10 +696,7 @@ function clickOnPaintArea(event){
         }
     }
 
-
-
-
-
+    test();
     draw();
 }
 

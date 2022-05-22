@@ -12,8 +12,8 @@
         }
 
         #instrument_panel {
-            width: 400px;
-            height: 550px;
+            width: 1200px;
+            height: 120px;
             background-color: gainsboro;
         }
 
@@ -42,10 +42,20 @@
 
         #build_panel {
             margin-left: 20px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+        }
+
+        .build_item {
+            padding-left: 10px;
         }
 
         #vizualization_div {
             margin-left: 20px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
         }
 
         #alg_console_div {
@@ -60,9 +70,6 @@
             margin-bottom: 5px;
         }
 
-        #start_vertex {
-            text-align: right;
-        }
 
 
     </style>
@@ -75,40 +82,39 @@
 <body>
 
     <div id = "instrumnet_and_paint_wrapper">
-        <div id = "paint_area" th:fragment = "paint_fragment">
-            <canvas width='1000' height='550'  id="canvas">Обновите браузер</canvas>
-        </div>
 
         <div id = "instrument_panel">
             <div id = "build_panel">
-                <div> <p>Построение</p> </div>
-                <div> <button onclick="operationType = 1"  class = "build_button">Создать вершину</button> </div>
-                <div> <button onclick="operationType = 2"  class = "build_button">Соединить</button> </div>
-                <div> <button onclick="operationType = 3" class = "build_button">Удалить вершину</button> </div>
-                <div> <button onclick="generateRandomGraph()" class = "build_button">Сгенерировать граф</button> </div>
-            </div>
+                <div class = "build_item"> <button onclick="operationType = 1"  class = "build_button">Создать вершину</button> </div>
+                <div class = "build_item"> <button onclick="operationType = 2"  class = "build_button">Соединить</button> </div>
+                <div class = "build_item"> <button onclick="operationType = 3" class = "build_button">Удалить вершину</button> </div>
+                <div class = "build_item"> <button onclick="generateRandomGraph()" class = "build_button">Сгенерировать граф</button> </div>
 
-            <div id = "vizualization_div">
-                <div> <p>Визуализация</p> </div>
-                <button onclick="test()" class = "viz_instrum_class"> Просчитать алгоритм </button>
+                <div id = "vizualization_div">
 
-                <div>
-                    <button onclick="prevStep()" id = "prev_step_button" class = "viz_instrum_class"> <- </button>
-                    <span id = "steps_status" class = "viz_instrum_class"> -/- </span>
-                    <button onclick="nextStep()" class = "viz_instrum_class"> -> </button>
-                </div>
+                    <button onclick="pause()" id = "pause_button" class = "viz_instrum_class"> > </button>
 
-                <div>
-                    <div class = "viz_instrum_class"> <label>Задержка:<input type="text" size="3" value="500" id = "delay_time" class = "viz_instrum_class"> </label> </div>
-                    <button onclick="beginAuto()" id = "begin_button" class = "viz_instrum_class"> Начать заново </button>
-                    <button onclick="pause()" id = "pause_button" class = "viz_instrum_class"> Пауза </button>
+                    <div>
+                        <button onclick="prevStep()" id = "prev_step_button" class = "viz_instrum_class"> <- </button>
+                        <span id = "steps_status" class = "viz_instrum_class"> -/- </span>
+                        <button onclick="nextStep()" class = "viz_instrum_class"> -> </button>
+                    </div>
+
+                    <div>
+                        <input type="range" min="500" max="2000" step="100" id = "r1" oninput = "workWithRange()">
+                    </div>
                 </div>
 
             </div>
-
 
 
         </div>
+
+
+    </div>
+
+    <div id = "paint_area" th:fragment = "paint_fragment">
+        <canvas width='1000' height='550'  id="canvas">Обновите браузер</canvas>
     </div>
 
     <div id = "alg_console_div">
