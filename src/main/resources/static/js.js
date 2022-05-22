@@ -256,7 +256,7 @@ function generateRandomGraph() {
     clearTimers();
 
     //n = getRandomInRange(5, 7);
-    n = 3;
+    n = 4;
     levels = [];
     levels.push([1]);
 
@@ -265,7 +265,7 @@ function generateRandomGraph() {
         currentLevelContent = [];
         for (let j = 0; j < levels[i-1].length; j++) {
             for (let k = 0; k < levels[i-1][j]; k++) {
-                numberOfChild = getRandomInRange(2, 3);
+                numberOfChild = getRandomInRange(1, 3);
                 currentLevelContent.push(numberOfChild);
             }
         }
@@ -278,8 +278,6 @@ function generateRandomGraph() {
         console.log(levels[i]);
     }
 
-    vertexInLastLevel = levels[n-1].length;
-    //console.log(vertexInLastLevel);
 
     drawZoneWidth = 800;
 
@@ -309,7 +307,6 @@ function generateRandomGraph() {
                 sumChildNumber += levels[i + 1][j];
             }
 
-        //console.log(sumChildNumber);
 
         xOffset = drawZoneWidth / (Number(sumChildNumber) + 1);
         createVertexX = rootX - drawZoneWidth / 2 + xOffset;
@@ -320,19 +317,33 @@ function generateRandomGraph() {
 
     //прокладывание связей
 
+    id = -1;
 
-    parentVertexesIds = [];
-    id = 0;
+    sum = 0;
+    start = 0;
+    finish = 0;
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < levels[i].length; j++) {
-            for (let k = 0; k < levels[i][j]; k++) {
-                parentVertexesIds.push(id);
-                id ++;
+            start = sum;
+            sum += levels[i][j];
+            finish = sum - 1;
+
+            if (id > -1) {
+                console.log("parent: " + id);
+                console.log(start + " - " + finish);
+                parent = id;
+                for (let k = start; k <= finish; k++) {
+                    linesArray.push(new Line(
+                        vertexArray[parent], vertexArray[k]
+                    ))
+                }
+
             }
+
+            id++;
         }
     }
 
-    console.log(parentVertexesIds);
 
 
     draw();
