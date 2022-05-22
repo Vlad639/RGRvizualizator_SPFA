@@ -107,12 +107,17 @@
 
                     <div>
                         <button onclick="prevStep()" id = "prev_step_button" class = "viz_instrum_class"> <- </button>
-                        <span id = "steps_status" class = "viz_instrum_class"> -/- </span>
+                        <!--<span id = "steps_status" class = "viz_instrum_class"> -/- </span> -->
+                        <span id = "steps_status" class = "viz_instrum_class">
+                            <input type="range" min="0" max="0" step="1" id = "r2" oninput = "stepRangeWork()">
+                        </span>
                         <button onclick="nextStep()" class = "viz_instrum_class"> -> </button>
                     </div>
 
+                    <p id = "steps_number_text" > TEST </p>
+
                     <div>
-                        <input type="range" min="500" max="2000" step="100" id = "r1" oninput = "workWithRange()">
+                        <input type="range" min="500" max="2000" step="100" id = "r1">
                     </div>
                 </div>
 

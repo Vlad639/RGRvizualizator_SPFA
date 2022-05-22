@@ -342,11 +342,15 @@ function beginAuto(){
     }
 }
 beginAuto();
+prevStep();
 
 
 function updateStepsStatusView(currentStep, allStep){
     text = currentStep + "/" + allStep
-    document.getElementById("steps_status").innerText = text;
+    document.getElementById("steps_number_text").innerText = text;
+     inputRange = document.getElementById("r2");
+     inputRange.max = allStep;
+
 }
 
 
@@ -423,7 +427,7 @@ function dfs(node)
         {
 
             // Recursive call for the child
-            addStep(tree.slice(), subtree_size.slice(), vis.slice(), "dfs");
+            //addStep(tree.slice(), subtree_size.slice(), vis.slice(), "dfs");
             subtree_size[node] += dfs(tree[node][child]);
 
 
@@ -450,8 +454,8 @@ function contribution(node,ans)
                 (n - subtree_size[tree[node][child]]));
 
 
-            addStep(tree.slice(), subtree_size.slice(), vis.slice(), "contribution, ans += "+ Number(subtree_size[tree[node][child]]) + "*" +
-            Number((n - subtree_size[tree[node][child]])) + ", ans = " + ans);
+            // addStep(tree.slice(), subtree_size.slice(), vis.slice(), "contribution, ans += "+ Number(subtree_size[tree[node][child]]) + "*" +
+            // Number((n - subtree_size[tree[node][child]])) + ", ans = " + ans);
 
             ans = contribution(tree[node][child], ans);
 
@@ -480,9 +484,11 @@ function getSum()
 
     return ans;
 }
+function stepRangeWork(){
+    s = document.getElementById("r2").value;
 
-function workWithRange(){
-    //document.getElementById("delay_time").innerHTML = document.getElementById("r1").value;
+
+    updateStepsStatusView(s,SPFASteps.length);
 }
 
 function test(){
@@ -503,7 +509,11 @@ function test(){
 
     n = vertexArray.length;
     graphFromVertexes();
-    console.log("Результат: " + getSum());
+    ans = getSum();
+
+    //addStep(tree.slice(), subtree_size.slice(), vis.slice(), "XXXXX, ans = " + ans);
+
+    console.log("Результат: " + Number(ans));
 
     stepNumber = 0;
     allSteps = SPFASteps.length;
