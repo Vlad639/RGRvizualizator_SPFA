@@ -98,35 +98,7 @@ class Step {
         result += "\n";
 
         result += this.comment;
-        // for (let i = 0; i < this.queue.length; i++) {
-        //     result += this.queue[i] + "] [";
-        // }
-        //
-        // result = result.substring(0, result.length-2);
-        //
-        // result += '\n' + "Массив расстояний: [";
-        // for (let i = 0; i < this.dis.length - 1; i++) {
-        //     if (this.dis[i] === Number.MAX_VALUE) {
-        //         result += "INF] [";
-        //     }
-        //     else {
-        //         result += this.dis[i] + "] [";
-        //     }
-        // }
-        //
-        // result = result.substring(0, result.length-2);
-        //
-        // result += '\n' + "Массив с посещёнными вершинами: [";
-        // for (let i = 0; i < this.vis.length - 1; i++) {
-        //     result += this.vis[i] + "] [";
-        // }
-        //
-        // result = result.substring(0, result.length-2);
-        //
-        // if (this.comment !== ""){
-        //     result += '\n' + this.comment;
-        // }
-        //
+
         return result;
 
     }
@@ -167,6 +139,7 @@ class Log{
         this.textArea.value = "";
         for (let i = 0; i < numb; i++) {
             this.textArea.value += this.textLines[i] + '\n';
+            this.textArea.scrollTop = this.textArea.scrollHeight;
         }
     }
 
@@ -315,6 +288,7 @@ function generateRandomGraph() {
     sum = 0;
     start = 0;
     finish = 0;
+    console.clear();
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < levels[i].length; j++) {
             start = sum;
@@ -434,17 +408,7 @@ function prevStep() {
         logger.printToLineNumber(stepNumber - 1);
 
         stepNumber --;
-        //
-        // if (stepNumber >= 1) {
-        //     changeVertexesDist(stepNumber - 1);
-        // }
-        // else {
-        //     for (let i = 0; i < vertexArray.length; i++) {
-        //         vertexArray[i].dist = "";
-        //     }
-        //
-        //     draw();
-        // }
+
     }
 
     updateStepsStatusView(stepNumber, SPFASteps.length);
@@ -563,15 +527,11 @@ function test(){
 
 
 
-    // let S = Number(document.getElementById("start_vertex").value);
-    // var V = vertexArray.length; // Number of vertices in graph
-    //
+
     n = vertexArray.length;
     graphFromVertexes();
-    alert(getSum());
-    //
-    //
-    // shortestPathFaster(graph, S, V);
+    alert("Результат: " + getSum());
+
     stepNumber = 0;
     allSteps = SPFASteps.length;
     clearTimers();
@@ -646,71 +606,20 @@ function draw() {
     drawAllVertexes();
 }
 
-function deleteLineBetweenSelectedVertexes(){
-    if (selectedVertexesNumbers !== 2) {
-        alert("Выбрано не 2 вершины!");
-        firstSelectedVertex = null;
-        secondSelectedVertex = null;
-        setSelectedFalseForAllVertexes();
-        selectedVertexesNumbers = 0;
-        draw();
-    }
-    else {
-        confirmResult = confirm("Удалить ребро между " + firstSelectedVertex.id + " и " + secondSelectedVertex.id + " вершинами?");
 
-        if (confirmResult) {
-            foundLine = findLineFromVertexesIds(firstSelectedVertex.id, secondSelectedVertex.id);
-
-            let i = linesArray.indexOf(foundLine);
-            linesArray.splice(i, 1);
-        }
-
-        firstSelectedVertex = null;
-        secondSelectedVertex = null;
-        setSelectedFalseForAllVertexes();
-        selectedVertexesNumbers = 0;
-        draw();
-    }
-
-}
-
-function connectVertexes(){
-    if (selectedVertexesNumbers !== 2) {
-        alert("Выбрано не 2 вершины!");
-        firstSelectedVertex = null;
-        secondSelectedVertex = null;
-        setSelectedFalseForAllVertexes();
-        selectedVertexesNumbers = 0;
-        draw();
-    }
-    else {
-        promptResult = prompt("Соединить вершины " + firstSelectedVertex.id + " и " + secondSelectedVertex.id + "?"
-            +"\nВес ребра:");
-
-        if (promptResult !== null) {
-            newLine = new Line(firstSelectedVertex, secondSelectedVertex);
-            newLine.weight = Number(promptResult);
-
-            linesArray.push(newLine);
-        }
-
-        firstSelectedVertex = null;
-        secondSelectedVertex = null;
-        setSelectedFalseForAllVertexes();
-        selectedVertexesNumbers = 0;
-        draw();
-    }
-
-}
 
 function deleteLinesWhenContainVertexWithId(deletedVertexId){
 
-    for (let i = 0; i < linesArray.length; i++) {
-        if (linesArray[i].vertex1.id === deletedVertexId || linesArray[i].vertex2.id === deletedVertexId){
-            linesArray.splice(i, 1);
-            i = 0;
+    for (let k = 0; k < linesArray.length; k++) {
+        for (let i = 0; i < linesArray.length; i++) {
+            if (linesArray[i].vertex1.id === deletedVertexId || linesArray[i].vertex2.id === deletedVertexId) {
+                linesArray.splice(i, 1);
+                i = 0;
+            }
         }
     }
+
+
 
     if (linesArray.length === 1)
         if (linesArray[0].vertex1.id === deletedVertexId || linesArray[0].vertex2.id === deletedVertexId)
@@ -726,9 +635,13 @@ function recalculateVertexesIds(){
 
 }
 
+
 function clickOnPaintArea(event){
     x = event.offsetX;
     y = event.offsetY;
+
+    // firstSelectedVertex = null;
+    // secondSelectedVertex = null;
 
     if (operationType === 1) {
         vertexArray.push(new Vertex(x, y));
@@ -736,26 +649,39 @@ function clickOnPaintArea(event){
 
     if (operationType === 2) {
 
+        wasClickOnVertex = false;
+
         if (vertexArray !== null)
             vertexArray.forEach(function(vertex) {
                 if (((vertex.x - x) * (vertex.x - x) + (vertex.y - y) * (vertex.y - y)) <= vertexRadius * vertexRadius) {
-                    if (vertex.selected) {
-                        selectedVertexesNumbers --;
-                        vertex.selected = false;
-                    }
-                    else {
-                        selectedVertexesNumbers ++;
-                        vertex.selected = true;
 
-                        if (firstSelectedVertex !== null)
-                            secondSelectedVertex = vertex;
+                    wasClickOnVertex = true;
 
-                        if (firstSelectedVertex === null)
-                            firstSelectedVertex = vertex;
+                    if (firstSelectedVertex === null){
+                        firstSelectedVertex = vertex;
+                        //alert(1);
+                        return "break";
                     }
+
+                    if (secondSelectedVertex === null){
+                        secondSelectedVertex = vertex;
+                        linesArray.push(new Line(firstSelectedVertex, secondSelectedVertex));
+
+                        firstSelectedVertex = secondSelectedVertex;
+                        secondSelectedVertex = null;
+                    }
+
+                    return "break";
                 }
-
             })
+
+        if (!wasClickOnVertex) {
+            firstSelectedVertex = null;
+            secondSelectedVertex = null;
+        }
+
+        draw();
+
     }
 
     if (operationType === 3) {
@@ -774,18 +700,21 @@ function clickOnPaintArea(event){
             })
 
         if (deletedVertex !== null){
-            confirmResult = confirm("Удалить вершину " + deletedVertex.id + "?");
+                deleteLinesWhenContainVertexWithId(deletedVertex.id);
 
-            if (confirmResult) {
                 let i = vertexArray.indexOf(deletedVertex);
                 vertexArray.splice(i, 1);
 
-                deleteLinesWhenContainVertexWithId(deletedVertex.id);
                 recalculateVertexesIds();
                 draw();
-            }
+
+
         }
     }
+
+
+
+
 
     draw();
 }

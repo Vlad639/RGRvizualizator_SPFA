@@ -83,20 +83,14 @@
             <div id = "build_panel">
                 <div> <p>Построение</p> </div>
                 <div> <button onclick="operationType = 1"  class = "build_button">Создать вершину</button> </div>
-                <div> <button onclick="operationType = 2" class = "build_button">Выбрать</button> </div>
-                <div> <button onclick="connectVertexes()" class = "build_button">Соединить</button> </div>
+                <div> <button onclick="operationType = 2"  class = "build_button">Соединить</button> </div>
                 <div> <button onclick="operationType = 3" class = "build_button">Удалить вершину</button> </div>
-                <div> <button onclick="deleteLineBetweenSelectedVertexes()" class = "build_button">Удалить ребро между выбранными вершинами</button> </div>
                 <div> <button onclick="generateRandomGraph()" class = "build_button">Сгенерировать граф</button> </div>
             </div>
 
             <div id = "vizualization_div">
                 <div> <p>Визуализация</p> </div>
                 <button onclick="test()" class = "viz_instrum_class"> Просчитать алгоритм </button>
-
-                <div id = "vertexses_div">
-                    <div> <label class = "viz_instrum_class">Стартовая вершина:<input type="text" size="2" value="0" id = "start_vertex" class = "viz_instrum_class"> </label> </div>
-                </div>
 
                 <div>
                     <button onclick="prevStep()" id = "prev_step_button" class = "viz_instrum_class"> <- </button>
