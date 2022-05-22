@@ -184,9 +184,9 @@ function pause(){
     pauseButton = document.getElementById("pause_button");
 
     if (vizPause)
-        pauseButton.innerText = "II";
+        pauseButton.innerHTML = '<img src="pause_pause.png" />';
     else
-        pauseButton.innerText = ">";
+        pauseButton.innerHTML = '<img src="pause_start.png" />';
 
     delayTime = document.getElementById("r1").value;
 
@@ -349,26 +349,6 @@ function updateStepsStatusView(currentStep, allStep){
     document.getElementById("steps_status").innerText = text;
 }
 
-function changeVertexesDist(stepNumber){
-
-    dis = SPFASteps[stepNumber].dis;
-
-    for (let i = 0; i < vertexArray.length; i++){
-        for (let j = 0; j < dis.length; j++) {
-            if (vertexArray[i].id === j) {
-                if (dis[j] === Number.MAX_VALUE){
-                    vertexArray[i].dist = "INF";
-                }
-                else {
-                    vertexArray[i].dist = dis[j];
-                }
-            }
-        }
-    }
-
-    draw();
-
-}
 
 function nextStep(){
 

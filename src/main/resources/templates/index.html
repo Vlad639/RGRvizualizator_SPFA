@@ -51,8 +51,14 @@
             padding-left: 10px;
         }
 
+        #pause_button {
+            width: 40px;
+        }
+
+
+
         #vizualization_div {
-            margin-left: 20px;
+            margin-left: 200px;
             display: flex;
             flex-direction: row;
             flex-wrap: nowrap;
@@ -62,10 +68,13 @@
             margin-left: 20px;
         }
 
-        .build_button {
-            margin-bottom: 5px;
-            width: 150px;
+        #build_button {
+            width: 30px;
+            height: 30px;
+            margin-right: 20px;
         }
+
+
         .viz_instrum_class {
             margin-bottom: 5px;
         }
@@ -85,14 +94,16 @@
 
         <div id = "instrument_panel">
             <div id = "build_panel">
-                <div class = "build_item"> <button onclick="operationType = 1"  class = "build_button">Создать вершину</button> </div>
-                <div class = "build_item"> <button onclick="operationType = 2"  class = "build_button">Соединить</button> </div>
-                <div class = "build_item"> <button onclick="operationType = 3" class = "build_button">Удалить вершину</button> </div>
-                <div class = "build_item"> <button onclick="generateRandomGraph()" class = "build_button">Сгенерировать граф</button> </div>
+                <div class = "build_item"> <button onclick="operationType = 1">Создать вершину</button> </div>
+                <div class = "build_item"> <button onclick="operationType = 2">Соединить</button> </div>
+                <div class = "build_item"> <button onclick="operationType = 3">Удалить вершину</button> </div>
+
 
                 <div id = "vizualization_div">
 
-                    <button onclick="pause()" id = "pause_button" class = "viz_instrum_class"> > </button>
+                    <div class = "viz_instrum_class" id = "build_button"> <button onclick="generateRandomGraph()"> <img src="build_icon.png"> </button> </div>
+
+                    <button onclick="pause()" id = "pause_button" class = "viz_instrum_class"> <img src="pause_start.png"> </button>
 
                     <div>
                         <button onclick="prevStep()" id = "prev_step_button" class = "viz_instrum_class"> <- </button>
